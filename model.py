@@ -22,7 +22,7 @@ class Conv_block(nn.Module):
         return out
     
 class Encoder_module(nn.Module):
-        def __init__(self):
+        def __init__(self, IsVAE=False):
             super(Encoder_module, self).__init__()
             #  input sample of size  69 × 240 (x 1) - HWC
             #  resized by pooling, not conv
@@ -32,13 +32,18 @@ class Encoder_module(nn.Module):
             self.Conv_block4 = Conv_block(input_channels = 128, output_channels = 256, kernel_size=3, stride=1, padding=1, pooling=2)
             self.Conv_block5 = Conv_block(input_channels = 256, output_channels = 256, kernel_size=3, stride=1, padding=1, pooling=2)
             # output latent size 3 × 8 × 256  - HWC
-            
+            self.IsVAE = IsVAE
+            if self.IsVAE ==True:
+                self.Conv_block_std = Conv_block(input_channels = 256, output_channels = 256, kernel_size=3, stride=1, padding=1, pooling=2)
         def forward(self, x):
             x = self.Conv_block1(x)
             x = self.Conv_block2(x)
             x = self.Conv_block3(x)
             x = self.Conv_block4(x)
-            out = self.Conv_block5(x)         
+            out = self.Conv_block5(x)
+            if self.IsVAE == True:
+                logvar = self.Conv_block_std(x)
+                return out , logvar
             return out
 
 class DeConv_block(nn.Module):
@@ -89,5 +94,23 @@ class Convolutional_AE(nn.Module):
 
     def forward(self, x):
         latent = self.Incoder_module(x)
+        out = self.Decoder_module(latent)
+        return out
+    
+class Convolutional_VAE(nn.Module):
+    def __init__(self):
+        super(Convolutional_VAE, self).__init__()
+        # input sample of size 69 × 240
+        self.Incoder_module = Encoder_module(IsVAE=True)
+        self.Decoder_module = Decoder_module()
+        
+    def sampling(self, mean, logvar):
+        std = torch.exp(0.5 * logvar)
+        eps = torch.randn_like(std)
+        return eps * std + mean
+    
+    def forward(self, x):
+        mean, logvar = self.Incoder_module(x)
+        latent = self.sampling(mean, logvar)
         out = self.Decoder_module(latent)
         return out
