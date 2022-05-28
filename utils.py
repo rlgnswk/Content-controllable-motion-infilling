@@ -3,7 +3,7 @@ import os.path
 import torch
 import sys
 from torchvision.utils import save_image
-
+import numpy as np
 
 class saveData():
     def __init__(self, args):
@@ -13,10 +13,10 @@ class saveData():
         if not os.path.exists(self.save_dir):
             os.makedirs(self.save_dir)
 
-        '''#Generate Savedir/model
+        #Generate Savedir/model
         self.save_dir_model = os.path.join(self.save_dir, 'model')
         if not os.path.exists(self.save_dir_model):
-            os.makedirs(self.save_dir_model)'''
+            os.makedirs(self.save_dir_model)
 
         #Generate Savedir/validation
         self.save_dir_validation = os.path.join(self.save_dir, 'validation')
@@ -43,7 +43,15 @@ class saveData():
         sys.stdout.flush()
         self.logFile.write(log + '\n')
         self.logFile.flush()
+        
     def save_model(self, model, epoch):
         torch.save(
             model.state_dict(),
             self.save_dir_model + '/model_' + str(epoch) + '.pt')
+    
+    def save_result(self, pred, gt, epoch):
+        pred = pred.detach().cpu().numpy()
+        gt = gt.detach().cpu().numpy()
+        
+        np.save(self.save_dir_validation + '/epoch_' + str(epoch) + "_Results", pred)
+        np.save(self.save_dir_validation + '/epoch_' + str(epoch) + "_GT", gt)

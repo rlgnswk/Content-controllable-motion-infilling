@@ -13,7 +13,7 @@ from torch.utils.tensorboard import SummaryWriter
 import random
 import os
 
-import model
+import models
 import utils
 import data_load
 #input sample of size 69 × 240
@@ -23,14 +23,16 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--name', type=str)
 parser.add_argument('--model_type', type=str, default='AE') 
-parser.add_argument('--datasetPath', type=str, default='./dataset/')
-parser.add_argument('--ValdatasetPath', type=str, default='./dataset/')
+parser.add_argument('--datasetPath', type=str, default='C:/Users/VML/Desktop/2022_Spring/Motion_Graphics/Final_project/downloadCode/train_data/')
+parser.add_argument('--ValdatasetPath', type=str, default='C:/Users/VML/Desktop/2022_Spring/Motion_Graphics/Final_project/downloadCode/valid_data/')
 parser.add_argument('--saveDir', type=str, default='./experiment')
 parser.add_argument('--gpu', type=str, default='0', help='gpu')
 parser.add_argument('--numEpoch', type=int, default=200, help='input batch size for training')
-parser.add_argument('--batchSize', type=int, default=16, help='input batch size for training')
+parser.add_argument('--batchSize', type=int, default=80, help='input batch size for training')
 parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
 args = parser.parse_args()
+
+
 
 
 def main(args):
@@ -45,9 +47,9 @@ def main(args):
     
     
     if args.model_type == 'VAE':
-        model = model.Convolutional_VAE().to(device)
+        model = models.Convolutional_VAE().to(device)
     else:
-        model = model.Convolutional_AE().to(device)
+        model = models.Convolutional_AE().to(device)
     
     train_dataloader = data_load.get_dataloader(args.datasetPath , args.batchSize)
     valid_dataloader = data_load.get_dataloader(args.ValdatasetPath , args.batchSize)
@@ -60,11 +62,12 @@ def main(args):
         
         total_loss = 0
         total_v_loss = 0
-        for iter, masked_input, gt_image in enumerate(train_dataloader):
+        for iter, item in enumerate(train_dataloader):
             print_num +=1
             
-            masked_input = masked_input.to(device)
-            gt_image = gt_image.to(device)
+            masked_input, gt_image = item
+            masked_input = masked_input.to(device, dtype=torch.float)
+            gt_image = gt_image.to(device, dtype=torch.float)
             
             pred = model(masked_input)
             
@@ -84,10 +87,11 @@ def main(args):
                 total_loss = 0
                 
         #validation per epoch ############
-        for iter, masked_input, gt_image in enumerate(valid_dataloader):
+        for iter, item in enumerate(valid_dataloader):
             model.eval()
-            masked_input = masked_input.to(device)
-            gt_image = gt_image.to(device)
+            masked_input, gt_image = item
+            masked_input = masked_input.to(device, dtype=torch.float)
+            gt_image = gt_image.to(device, dtype=torch.float)
             
             with torch.no_grad():
                 pred = model(masked_input)
@@ -97,10 +101,16 @@ def main(args):
 
             model.train()
             
+        saveUtils.save_result(pred, gt_image, num_epoch)
         valid_epoch_loss = total_v_loss/len(valid_dataloader)
-        log = "Valid: [Epoch %d] [Train Loss: %.4f]" % (num_epoch, valid_epoch_loss)
+        log = "Valid: [Epoch %d] [Valid Loss: %.4f]" % (num_epoch, valid_epoch_loss)
         print(log)
         saveUtils.save_log(log)
         writer.add_scalar("Valid Loss/ Epoch", valid_epoch_loss, num_epoch)    
         saveUtils.save_model(model, num_epoch) # save model per epoch
         #validation per epoch ############
+        
+        
+        
+if __name__ == "__main__":
+    main(args)
