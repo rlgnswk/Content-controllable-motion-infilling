@@ -101,7 +101,7 @@ def main(args):
 
             model.train()
             
-        saveUtils.save_result(pred, gt_image, num_epoch)
+        saveUtils.save_result(pred, gt_image, masked_input, num_epoch)
         valid_epoch_loss = total_v_loss/len(valid_dataloader)
         log = "Valid: [Epoch %d] [Valid Loss: %.4f]" % (num_epoch, valid_epoch_loss)
         print(log)

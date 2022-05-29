@@ -49,9 +49,12 @@ class saveData():
             model.state_dict(),
             self.save_dir_model + '/model_' + str(epoch) + '.pt')
     
-    def save_result(self, pred, gt, epoch):
-        pred = pred.detach().cpu().numpy()
-        gt = gt.detach().cpu().numpy()
+    def save_result(self, pred, gt, masked_input, epoch):
+        pred = pred.detach().squeeze(1).permute(0,2,1).cpu().numpy()
+        gt = gt.detach().squeeze(1).permute(0,2,1).cpu().numpy()
+        masked_input = masked_input.detach().squeeze(1).permute(0,2,1).cpu().numpy()
         
         np.save(self.save_dir_validation + '/epoch_' + str(epoch) + "_Results", pred)
         np.save(self.save_dir_validation + '/epoch_' + str(epoch) + "_GT", gt)
+        np.save(self.save_dir_validation + '/epoch_' + str(epoch) + "_Masked_Input", masked_input)
+        
