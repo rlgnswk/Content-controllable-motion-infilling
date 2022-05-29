@@ -51,8 +51,11 @@ def main(args):
     else:
         model = models.Convolutional_AE().to(device)
     
-    train_dataloader = data_load.get_dataloader(args.datasetPath , args.batchSize)
-    valid_dataloader = data_load.get_dataloader(args.ValdatasetPath , args.batchSize)
+    train_dataloader, train_mean, train_std = data_load.get_dataloader(args.datasetPath , args.batchSize, IsNoise=False, \
+                                                                            IsTrain=True, dataset_mean=None, dataset_std=None)
+    valid_dataloader = data_load.get_dataloader(args.ValdatasetPath , args.batchSize, IsNoise=False, \
+                                                                            IsTrain=False, dataset_mean=train_mean, dataset_std=train_std)
+    
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     loss_function = nn.L1Loss()
     
@@ -96,11 +99,14 @@ def main(args):
             with torch.no_grad():
                 pred = model(masked_input)
             
-            val_loss = loss_function(pred, gt_image)
+            val_loss = loss_function(pred, gt_image.detach())
             total_v_loss += val_loss.item()
 
             model.train()
-            
+        #pred = data_load.De_normalize_data_dist(pred.detach().squeeze(1).permute(0,2,1).cpu().numpy(), 0.0, 1.0)
+        #gt_image = data_load.De_normalize_data_dist(gt_image.detach().squeeze(1).permute(0,2,1).cpu().numpy(), 0.0, 1.0)
+        #masked_input = data_load.De_normalize_data_dist(masked_input.detach().squeeze(1).permute(0,2,1).cpu().numpy(), 0.0, 1.0)
+        
         saveUtils.save_result(pred, gt_image, masked_input, num_epoch)
         valid_epoch_loss = total_v_loss/len(valid_dataloader)
         log = "Valid: [Epoch %d] [Valid Loss: %.4f]" % (num_epoch, valid_epoch_loss)

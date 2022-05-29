@@ -96,24 +96,31 @@ def add_foot_contacts(data): # chaneel 73 -> 69, 69 is baseline
 
 if __name__ == '__main__':
 
-    data_path = "C:/Users/VML/Documents/GitHub/Motion_Style_Infilling/experiment/0529secondTrain/validation/"
-    db = 'epoch_5_GT.npy'
+    data_path = "C:/Users/VML/Documents/GitHub/Motion_Style_Infilling/experiment/0529NoNormal4/validation/"
+    epoch = 0
+    db_GT = 'epoch_'+str(epoch)+'_GT.npy'
+    db_Results = 'epoch_'+str(epoch)+'_Results.npy'
+    db_Input = 'epoch_'+str(epoch)+'_Masked_Input.npy'
     
-    database = np.load(os.path.join(data_path, db))
-    print(database.shape)
-    database = add_foot_contacts(database)
+    database_GT= np.load(os.path.join(data_path, db_GT))
+    #print(database.shape)
+    database_GT = add_foot_contacts(database_GT)
     
-    '''data_path = 'C:/Users/VML/Desktop/2022_Spring/Motion_Graphics/Final_project/downloadCode/valid_data/'
-    db = 'data_hdm05.npz'
-    database = np.load(os.path.join(data_path, db))['clips']
-    print(database.shape)'''
+    database_Results= np.load(os.path.join(data_path, db_Results))
+    #print(database.shape)
+    database_Results = add_foot_contacts(database_Results)
+    
+    database_Input= np.load(os.path.join(data_path, db_Input))
+    #print(database.shape)
+    database_Input = add_foot_contacts(database_Input)
+    
     for i in range(10):
-        index0 = np.random.randint(0, len(database))
-        index1 = np.random.randint(0, len(database))
-        index2 = np.random.randint(0, len(database))
-        print("database[index0:index0 + 1]: ",database[index0:index0 + 1].shape)
+        index0 = np.random.randint(0, len(database_GT))
+        #index1 = np.random.randint(0, len(database))
+        #index2 = np.random.randint(0, len(database))
+        #print("database[index0:index0 + 1]: ",database[index0:index0 + 1].shape)
         animation_plot([
-            database[index0:index0 + 1],
-            database[index1:index1 + 1],
-            database[index2:index2 + 1],
+            database_GT[index0:index0 + 1],
+            database_Results[index0:index0 + 1],
+            database_Input[index0:index0 + 1],
         ])

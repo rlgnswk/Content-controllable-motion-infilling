@@ -4,6 +4,7 @@ import torch
 import sys
 from torchvision.utils import save_image
 import numpy as np
+import matplotlib.pyplot as plt
 
 class saveData():
     def __init__(self, args):
@@ -58,3 +59,31 @@ class saveData():
         np.save(self.save_dir_validation + '/epoch_' + str(epoch) + "_GT", gt)
         np.save(self.save_dir_validation + '/epoch_' + str(epoch) + "_Masked_Input", masked_input)
         
+        cmap = plt.get_cmap('jet') 
+        
+        for i in range(1): 
+            plt.figure(figsize=(2,4))
+            plt.matshow(pred[i], cmap=cmap)
+            plt.clim(-100, 50)
+            #plt.axis('off')
+            plt.title("prediction", fontsize=25)
+            plt.savefig(self.save_dir_validation + '/epoch_'+ str(epoch) +'_prediction_'+str(i)+'.png')
+            
+        for i in range(1): 
+            plt.figure(figsize=(2,4))
+            plt.matshow(gt[i], cmap=cmap)
+            plt.clim(-100, 50)
+            #plt.axis('off')
+            plt.title("gt", fontsize=25)
+            plt.savefig(self.save_dir_validation + '/epoch_'+ str(epoch) +'_gt_'+str(i)+'.png')  
+            
+        for i in range(1): 
+            plt.figure(figsize=(2,4))
+            plt.matshow(masked_input[i], cmap=cmap)
+            #plt.matshow(np.zeros(masked_input[i].shape), cmap=cmap)
+            plt.clim(-100, 50)
+            #plt.axis('off')
+            plt.title("masked_input", fontsize=25)
+            plt.savefig(self.save_dir_validation + '/epoch_'+ str(epoch) +'_masked_input_'+str(i)+'.png')
+        
+        plt.close('all')

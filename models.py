@@ -14,6 +14,10 @@ class Conv_block(nn.Module):
         # When ceil_mode=True, sliding windows are allowed to go off-bounds if they start within the left padding or the input. Sliding windows that would start in the right padded region are ignored.
         self.mp = nn.MaxPool2d(kernel_size=pooling, stride=pooling, ceil_mode=True) 
         #self.bn = nn.BatchNorm2d(output_channels)
+        
+        nn.init.xavier_normal_(self.conv1.weight)
+        nn.init.xavier_normal_(self.conv2.weight)
+         
       def forward(self, x):
         
         x = self.Lrelu1(self.conv1(x))
@@ -55,6 +59,9 @@ class DeConv_block(nn.Module):
         self.ConvTrans2 = nn.ConvTranspose2d(output_channels, output_channels, kernel_size=kernel_size, stride=1, padding=padding) # no sizing
         self.Lrelu2 = nn.LeakyReLU(True)
         
+        
+        nn.init.xavier_normal_(self.ConvTrans1.weight)
+        nn.init.xavier_normal_(self.ConvTrans2.weight)
         #self.BN = nn.BatchNorm2d(OutChannel)
     def forward(self, x):
         x = self.Lrelu1(self.ConvTrans1(x))
