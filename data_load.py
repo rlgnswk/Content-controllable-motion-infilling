@@ -53,6 +53,7 @@ class MotionLoader(Dataset):
             
             self.IsNoise = IsNoise
             self.IsTrain = IsTrain
+            self.masking_length_mean = 10
             data_list = os.listdir(root)
             for idx , name in enumerate(data_list):
                 file_path = os.path.join(root, name)
@@ -81,11 +82,21 @@ class MotionLoader(Dataset):
             #get masked input
             
             #masked_input, gt_image = self.masking_input(gt_image, self.IsNoise)
-            masking_length = 60
+            #masking_length = 60
+            #if self.masking_length_mean < 120 and epoch is not 0 and epoch%10 == 0:
+            #     self.masking_length_mean = self.masking_length_mean + 10
+            
+            masking_length = round(np.random.normal(self.masking_length_mean, 20.0)) # std 20
+            
+            if masking_length <= 0 : 
+                masking_length = 1
+            if masking_length >= 240 :
+                masking_length = 239
+                
             orig_height = gt_image.shape[0] #69
             orig_width = gt_image.shape[1] #240
             masked_input = gt_image.copy() # deep copy
-            mask_width = masking_length + self.noise(False) #55 ~ 65
+            mask_width = masking_length #+ self.noise(False) #55 ~ 65
             
             masking = np.zeros((orig_height, mask_width))# generate zeros matrix for masking: orig_height x mask_width
             index = random.randint(0, orig_width - mask_width)# sampling the start point of masking 
@@ -131,10 +142,10 @@ def get_dataloader(dataroot, batch_size, IsNoise=False, IsTrain=True, dataset_me
     
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, drop_last=True)
     if IsTrain == True:
-        mean, std = dataset.mean_std()
-        return dataloader, mean, std
+        #mean, std = dataset.mean_std()
+        return dataloader, dataset
     else:
-        return dataloader
+        return dataloader, dataset
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ import torch.optim as optim         # Adam Optimizer
 from torch.distributions import Categorical # Categorical import from torch.distributions module
 import torch.multiprocessing as mp # multi processing
 import time 
-
+from torch.utils.data import Dataset, DataLoader
 from matplotlib import pyplot as plt ###for plot
 import numpy as np
 from torch.utils.tensorboard import SummaryWriter
@@ -51,10 +51,10 @@ def main(args):
     else:
         model = models.Convolutional_AE().to(device)
     
-    train_dataloader, train_mean, train_std = data_load.get_dataloader(args.datasetPath , args.batchSize, IsNoise=False, \
+    train_dataloader, train_dataset = data_load.get_dataloader(args.datasetPath , args.batchSize, IsNoise=False, \
                                                                             IsTrain=True, dataset_mean=None, dataset_std=None)
-    valid_dataloader = data_load.get_dataloader(args.ValdatasetPath , args.batchSize, IsNoise=False, \
-                                                                            IsTrain=False, dataset_mean=train_mean, dataset_std=train_std)
+    valid_dataloader, valid_dataset = data_load.get_dataloader(args.ValdatasetPath , args.batchSize, IsNoise=False, \
+                                                                            IsTrain=False, dataset_mean=None, dataset_std=None)
     
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     loss_function = nn.L1Loss()
@@ -65,6 +65,13 @@ def main(args):
         
         total_loss = 0
         total_v_loss = 0
+        
+        if train_dataset.masking_length_mean < 120 and num_epoch is not 0 and num_epoch%10 == 0:
+            train_dataset.masking_length_mean = train_dataset.masking_length_mean + 10
+            valid_dataset.masking_length_mean = train_dataset.masking_length_mean
+            train_dataloader = DataLoader(train_dataset, batch_size=args.batchSize, shuffle=True, drop_last=True)
+            valid_dataloader = DataLoader(valid_dataset, batch_size=args.batchSize, shuffle=True, drop_last=True)
+        
         for iter, item in enumerate(train_dataloader):
             print_num +=1
             
