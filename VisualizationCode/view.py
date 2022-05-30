@@ -17,6 +17,7 @@ def animation_plot(animations, interval=33.33):
         anim = animations[ai][0].copy()[:, 3:]
 
         joints, root_x, root_z, root_r = anim[:, :-7], anim[:, -7], anim[:, -6], anim[:, -5]
+        
         print("before: ",joints.shape)
         joints = joints.reshape((len(joints), -1, 3))
         print("after: ",joints.shape)
@@ -28,9 +29,11 @@ def animation_plot(animations, interval=33.33):
             joints[i, :, :] = rotation * joints[i]
             joints[i, :, 0] = joints[i, :, 0] + translation[0, 0]
             joints[i, :, 2] = joints[i, :, 2] + translation[0, 2]
-            rotation = Quaternions.from_angle_axis(-root_r[i], np.array([0, 1, 0])) * rotation
+            #rotation = Quaternions.from_angle_axis(-root_r[i], np.array([0, 1, 0])) * rotation
+            rotation = Quaternions.from_angle_axis(-0.0, np.array([0, 1, 0])) * rotation
             offsets.append(rotation * np.array([0, 0, 1]))
-            translation = translation + rotation * np.array([root_x[i], 0, root_z[i]])
+            #translation = translation + rotation * np.array([root_x[i], 0, root_z[i]])
+            translation = translation + rotation * np.array([0, 0, 0])
 
         animations[ai] = joints
         footsteps.append(anim[:, -4:])
@@ -96,8 +99,8 @@ def add_foot_contacts(data): # chaneel 73 -> 69, 69 is baseline
 
 if __name__ == '__main__':
 
-    data_path = "C:/Users/VML/Documents/GitHub/Motion_Style_Infilling/experiment/0530maskDone1CurriculLearning_bn_weight4root/validation/"
-    epoch = 30
+    data_path = "C:/Users/VML/Documents/GitHub/Motion_Style_Infilling/experiment/0530maskDone1CurriculLearning_bn/validation/"
+    epoch = 199
     db_GT = 'epoch_'+str(epoch)+'_GT.npy'
     db_Results = 'epoch_'+str(epoch)+'_Results.npy'
     db_Input = 'epoch_'+str(epoch)+'_Masked_Input.npy'
