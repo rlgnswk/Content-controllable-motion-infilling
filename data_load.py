@@ -14,7 +14,7 @@ def remove_foot_contacts(data): # chaneel 73 -> 69, 69 is baseline
     assert data.shape[0] == 73
     return np.delete(data, obj=list(range(data.shape[0] - 4, data.shape[0])), axis=0)
 
-def calculate_data_dist(data):
+'''def calculate_data_dist(data):
     assert data.shape[2] == 73
     temp = data.reshape(-1, 73)
     remove_foot_contacts
@@ -42,7 +42,7 @@ def normalize_data_dist(gt_image, dataset_mean, dataset_std):
             std = 1
         gt_image[idx, :] = (gt_image[idx, :] - mean) / std
     
-    return gt_image
+    return gt_image'''
 
 class MotionLoader(Dataset):
         def __init__(self, root, IsNoise=False, IsTrain=True, dataset_mean=None, dataset_std=None):
@@ -61,13 +61,14 @@ class MotionLoader(Dataset):
                     self.data = np.load(file_path)['clips'] #(clip num, 240, 73) (2846, 240, 73)
                 else:
                     self.data = np.concatenate((self.data, np.load(file_path)['clips']), axis=0) # concat all the data (# of data , 240 , 73)
-            if self.IsTrain == True:
+            '''if self.IsTrain == True:
                 self.dataset_mean, self.dataset_std = calculate_data_dist(self.data)
                 #print("dataset_mean", self.dataset_mean.shape)
                 #print("dataset_std", self.dataset_std.shape)
             else:
                 self.dataset_mean = dataset_mean
-                self.dataset_std = dataset_std
+                self.dataset_std = dataset_std'''
+                
             print("####### total Lentgh is {} ######".format(self.__len__()))
             
         def mean_std(self):
@@ -121,7 +122,7 @@ class MotionLoader(Dataset):
             else:
                 return 0
 
-        def masking_input(self, gt_image, masking_length = 60, IsNoise = False):
+        '''def masking_input(self, gt_image, masking_length = 60, IsNoise = False):
             # input sample of size 69 × 240
             # in paper 10 ~ 120
             # I will set 60
@@ -134,7 +135,7 @@ class MotionLoader(Dataset):
             index = random.randint(0, orig_width - mask_width)# sampling the start point of masking 
             masked_input[: , index : index+mask_width] = masking # masking
             print("in func: ",np.sum(masked_input) == np.sum(gt_image))
-            return masked_input, gt_image        
+            return masked_input, gt_image  '''      
         
 def get_dataloader(dataroot, batch_size, IsNoise=False, IsTrain=True, dataset_mean=None, dataset_std=None):
     dataset = MotionLoader(dataroot, IsNoise=IsNoise, IsTrain=IsTrain, dataset_mean=dataset_mean, dataset_std=dataset_std)

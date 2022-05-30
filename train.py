@@ -33,8 +33,6 @@ parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
 args = parser.parse_args()
 
 
-
-
 def main(args):
     
     os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   
@@ -86,14 +84,13 @@ def main(args):
             pred = model(masked_input)
             
             train_loss = loss_function(pred, gt_image)
-            
-            
-            
+
             #total_loss += train_loss.item()
-            train_loss_root = loss_function(pred[:, :, -7:-5, :], gt_image[:, :, -7:-5, :])
+            train_loss_root = loss_function(pred[:, :, -7, :], gt_image[:, :, -7:, :]) + loss_function(pred[:, :, -6, :], gt_image[:, :, -6:, :]) +loss_function(pred[:, :, -5, :], gt_image[:, :, -5:, :])
+            
+            
             total_train_loss = train_loss + train_loss_root * 10
             total_loss += total_train_loss.item()
-            
             
             optimizer.zero_grad()
             total_train_loss.backward()
@@ -117,17 +114,15 @@ def main(args):
             
             with torch.no_grad():
                 pred = model(masked_input)
-            train_loss_root = loss_function(pred[:, :, -7:-5, :], gt_image[:, :, -7:-5, :])
-            total_train_loss = train_loss + train_loss_root * 10
-            
-            
+
             val_loss = loss_function(pred, gt_image.detach())
-            val_loss_root = loss_function(pred[:, :, -7:-5, :], gt_image[:, :, -7:-5, :])
+            val_loss_root = loss_function(pred[:, :, -7, :], gt_image[:, :, -7:, :]) + loss_function(pred[:, :, -6, :], gt_image[:, :, -6:, :]) +loss_function(pred[:, :, -5, :], gt_image[:, :, -5:, :])
             
             total_val_loss = val_loss + val_loss_root * 10
             total_v_loss += total_val_loss.item()
             
             model.train()
+            
         #pred = data_load.De_normalize_data_dist(pred.detach().squeeze(1).permute(0,2,1).cpu().numpy(), 0.0, 1.0)
         #gt_image = data_load.De_normalize_data_dist(gt_image.detach().squeeze(1).permute(0,2,1).cpu().numpy(), 0.0, 1.0)
         #masked_input = data_load.De_normalize_data_dist(masked_input.detach().squeeze(1).permute(0,2,1).cpu().numpy(), 0.0, 1.0)
