@@ -7,10 +7,18 @@ class Conv_block(nn.Module):
       def __init__(self, input_channels, output_channels, kernel_size=3, stride=1, padding=1, pooling=2):
         super(Conv_block, self).__init__()
         self.conv1 = nn.Conv2d(input_channels, output_channels, kernel_size=kernel_size, stride=stride, padding=padding)
+        
+        
+        self.bn1 = nn.BatchNorm2d(output_channels)
+
         self.Lrelu1 = nn.LeakyReLU(True)
         
         self.conv2 = nn.Conv2d(output_channels, output_channels, kernel_size=kernel_size, stride=stride, padding=padding)
+        
+        self.bn2 = nn.BatchNorm2d(output_channels)
+        
         self.Lrelu2 = nn.LeakyReLU(True)
+        
         # When ceil_mode=True, sliding windows are allowed to go off-bounds if they start within the left padding or the input. Sliding windows that would start in the right padded region are ignored.
         self.mp = nn.MaxPool2d(kernel_size=pooling, stride=pooling, ceil_mode=True) 
         #self.bn = nn.BatchNorm2d(output_channels)
@@ -20,8 +28,8 @@ class Conv_block(nn.Module):
          
       def forward(self, x):
         
-        x = self.Lrelu1(self.conv1(x))
-        out = self.mp(self.Lrelu2(self.conv2(x)))
+        x = self.Lrelu1(self.bn1(self.conv1(x)))
+        out = self.mp(self.Lrelu2(self.bn2(self.conv2(x))))
         
         return out
     
@@ -54,9 +62,11 @@ class DeConv_block(nn.Module):
     def __init__(self, input_channels, output_channels, kernel_size=3, stride=2, padding=1, output_padding = 0 ):
         super(DeConv_block, self).__init__()
         self.ConvTrans1 = nn.ConvTranspose2d(input_channels, output_channels, kernel_size=kernel_size, stride=stride, padding=padding, output_padding=output_padding) # upsample
+        self.bn1 = nn.BatchNorm2d(output_channels)
         self.Lrelu1 = nn.LeakyReLU(True)
         
         self.ConvTrans2 = nn.ConvTranspose2d(output_channels, output_channels, kernel_size=kernel_size, stride=1, padding=padding) # no sizing
+        self.bn2 = nn.BatchNorm2d(output_channels)
         self.Lrelu2 = nn.LeakyReLU(True)
         
         
@@ -64,8 +74,8 @@ class DeConv_block(nn.Module):
         nn.init.xavier_normal_(self.ConvTrans2.weight)
         #self.BN = nn.BatchNorm2d(OutChannel)
     def forward(self, x):
-        x = self.Lrelu1(self.ConvTrans1(x))
-        out = self.Lrelu2(self.ConvTrans2(x))
+        x = self.Lrelu1(self.bn1(self.ConvTrans1(x)))
+        out = self.Lrelu2( self.bn2(self.ConvTrans2(x)))
         return out
     
     

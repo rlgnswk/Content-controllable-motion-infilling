@@ -71,7 +71,11 @@ def main(args):
             valid_dataset.masking_length_mean = train_dataset.masking_length_mean
             train_dataloader = DataLoader(train_dataset, batch_size=args.batchSize, shuffle=True, drop_last=True)
             valid_dataloader = DataLoader(valid_dataset, batch_size=args.batchSize, shuffle=True, drop_last=True)
-        
+            
+            log = "Current train_dataset.masking_length_mean: %d" % train_dataset.masking_length_mean
+            print(log)
+            saveUtils.save_log(log)
+            
         for iter, item in enumerate(train_dataloader):
             print_num +=1
             
@@ -82,10 +86,16 @@ def main(args):
             pred = model(masked_input)
             
             train_loss = loss_function(pred, gt_image)
+            
+            train_loss_root = loss_function(pred[:, :, -7:-5, :], gt_image[:, :, -7:-5, :])
+            
             total_loss += train_loss.item()
             
+            total_train_loss = train_loss + train_loss_root * 10
+            
             optimizer.zero_grad()
-            train_loss.backward()
+            total_train_loss.backward()
+            #train_loss.backward()
             optimizer.step()
             
             if iter % print_interval == 0 and iter != 0:
