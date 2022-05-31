@@ -97,16 +97,16 @@ class MotionLoader(Dataset):
             orig_height = gt_image.shape[0] #69
             orig_width = gt_image.shape[1] #240
             #test denoising
-            masked_input = gt_image.copy() + np.random.randn(orig_height, orig_width) * 0.1 # deep copy
+            #masked_input = gt_image.copy() + np.random.randn(orig_height, orig_width) * 0.1 # deep copy
             
             # for maksing
-            '''
+            
             masked_input = gt_image.copy()
             mask_width = masking_length #+ self.noise(False) #55 ~ 65
             
             masking = np.zeros((orig_height, mask_width))# generate zeros matrix for masking: orig_height x mask_width
             index = random.randint(0, orig_width - mask_width)# sampling the start point of masking 
-            masked_input[: , index : index+mask_width] = masking # masking'''
+            masked_input[: , index : index+mask_width] = masking # masking
             
             #print(np.sum(masked_input) == np.sum(gt_image))
             #return maksed_input and gt CHW #(69, 240) --> (1, 69, 240)
@@ -146,7 +146,12 @@ def get_dataloader(dataroot, batch_size, IsNoise=False, IsTrain=True, dataset_me
     dataset = MotionLoader(dataroot, IsNoise=IsNoise, IsTrain=IsTrain, dataset_mean=dataset_mean, dataset_std=dataset_std)
     print("# of dataset:", len(dataset))
     
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, drop_last=True)
+    if IsTrain == True:
+        IsSuffle = True
+    else:
+        IsSuffle = False
+        
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=IsSuffle, drop_last=True)
     if IsTrain == True:
         #mean, std = dataset.mean_std()
         return dataloader, dataset
@@ -158,10 +163,16 @@ if __name__ == "__main__":
     print("START")
     data_root = 'C:/Users/VML/Desktop/2022_Spring/Motion_Graphics/Final_project/downloadCode/valid_data/'
     batch_size = 32
-    datalodaer = get_dataloader(data_root , 32)
+    datalodaer, _ = get_dataloader(data_root , 32)
+    datalodaer2, _ = get_dataloader(data_root , 32)
     
-    for iter, item in enumerate(datalodaer): 
+    for iter, item0 in enumerate(zip(datalodaer, datalodaer2)): 
+        #print(item.shape)
+        item , item2 = item0
         masked_input, gt_image = item
+        masked_input2, gt_image2 = item2
+        print("masked_input.sum(): ", masked_input.sum())
+        print("masked_input2.sum(): ", masked_input2.sum()) 
         print(iter)
         print(masked_input.shape)
         print(gt_image.shape)
@@ -169,3 +180,17 @@ if __name__ == "__main__":
             break
     
     print("END")
+    
+    '''for iter, item in enumerate(datalodaer2): 
+        
+        
+        masked_input, gt_image = item
+        print("masked_input.sum(): ", masked_input.sum())
+        #print("masked_input2.sum(): ", masked_input2.sum()) 
+        print(iter)
+        print(masked_input.shape)
+        print(gt_image.shape)
+        if iter == 5 :
+            break
+    
+    print("END")'''

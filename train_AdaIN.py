@@ -52,11 +52,19 @@ def main(args):
         model = models.Convolutional_AE().to(device)
     
     saveUtils.save_log(str(args))
-    saveUtils.save_log(str(summary(model, (1,1,69,240))))
+    saveUtils.save_log(summary(model, (1,1,69,240)))
     
     train_dataloader, train_dataset = data_load.get_dataloader(args.datasetPath , args.batchSize, IsNoise=False, \
                                                                             IsTrain=True, dataset_mean=None, dataset_std=None)
+    
+    train_style_dataloader, style_train_dataset = data_load.get_dataloader(args.datasetPath , args.batchSize, IsNoise=False, \
+                                                                            IsTrain=True, dataset_mean=None, dataset_std=None)
+    
+    
     valid_dataloader, valid_dataset = data_load.get_dataloader(args.ValdatasetPath , args.batchSize, IsNoise=False, \
+                                                                            IsTrain=False, dataset_mean=None, dataset_std=None)
+    
+    valid_style_dataloader, valid_style_dataset = data_load.get_dataloader(args.ValdatasetPath , args.batchSize, IsNoise=False, \
                                                                             IsTrain=False, dataset_mean=None, dataset_std=None)
     
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
@@ -79,21 +87,20 @@ def main(args):
             print(log)
             saveUtils.save_log(log)
             
-        for iter, item in enumerate(train_dataloader):
+        for iter, item in enumerate(zip(train_dataloader,train_style_dataloader)):
             print_num +=1
             
-            masked_input, gt_image = item
+            masked_input, gt_image, _, style_image = item
             masked_input = masked_input.to(device, dtype=torch.float)
             gt_image = gt_image.to(device, dtype=torch.float)
+            style_image = style_image.to(device, dtype=torch.float)
+            
             
             pred = model(masked_input)
             
             train_loss = loss_function(pred, gt_image)
 
-            #total_loss += train_loss.item()
-            #train_loss_root = loss_function(pred[:, :, -7, :], gt_image[:, :, -7, :]) + loss_function(pred[:, :, -6, :], gt_image[:, :, -6, :]) +loss_function(pred[:, :, -5, :], gt_image[:, :, -5, :])
-            
-            
+
             total_train_loss = train_loss #+ train_loss_root * 10
             total_loss += total_train_loss.item()
             
