@@ -96,11 +96,17 @@ def add_foot_contacts(data): # chaneel 73 -> 69, 69 is baseline
     return result
             
         
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('--name', type=str) # experiment name 
+parser.add_argument('--epoch', type=int, default=199, help='input batch size for training') #epoch num
+args = parser.parse_args()
+
 
 if __name__ == '__main__':
 
-    data_path = "C:/Users/VML/Documents/GitHub/Motion_Style_Infilling/experiment/0530maskDone1CurriculLearning_bn/validation/"
-    epoch = 199
+    data_path = "C:/Users/VML/Documents/GitHub/Motion_Style_Infilling/experiment/"+args.name +"/validation/"
+    epoch = args.epoch
     db_GT = 'epoch_'+str(epoch)+'_GT.npy'
     db_Results = 'epoch_'+str(epoch)+'_Results.npy'
     db_Input = 'epoch_'+str(epoch)+'_Masked_Input.npy'

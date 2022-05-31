@@ -96,12 +96,17 @@ class MotionLoader(Dataset):
                 
             orig_height = gt_image.shape[0] #69
             orig_width = gt_image.shape[1] #240
-            masked_input = gt_image.copy() # deep copy
+            #test denoising
+            masked_input = gt_image.copy() + np.random.randn(orig_height, orig_width) * 0.1 # deep copy
+            
+            # for maksing
+            '''
+            masked_input = gt_image.copy()
             mask_width = masking_length #+ self.noise(False) #55 ~ 65
             
             masking = np.zeros((orig_height, mask_width))# generate zeros matrix for masking: orig_height x mask_width
             index = random.randint(0, orig_width - mask_width)# sampling the start point of masking 
-            masked_input[: , index : index+mask_width] = masking # masking
+            masked_input[: , index : index+mask_width] = masking # masking'''
             
             #print(np.sum(masked_input) == np.sum(gt_image))
             #return maksed_input and gt CHW #(69, 240) --> (1, 69, 240)
