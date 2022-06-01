@@ -223,10 +223,107 @@ class Convolutional_AE_AdaIN(nn.Module):
         
         return out, out_latent, content_latent, [out_feat1_1, out_feat2_1, out_feat3_1, out_feat4_1], [style_feat1_1, styles_feat2_1, style_feat3_1, style_feat4_1]
     
-    if __name__ == '__main__':
+    
+    
+    
+class DeConv_block_upsampling(nn.Module):
+    def __init__(self, input_channels, output_channels, kernel_size=3, stride=1, padding=1, size=None):
+        super(DeConv_block_upsampling, self).__init__()
+        self.up = nn.Upsample(size=size, mode='nearest')
+        
+        self.conv1 = nn.Conv2d(input_channels, output_channels, kernel_size=kernel_size, stride=stride, padding=padding)
+        #self.ConvTrans1 = nn.ConvTranspose2d(input_channels, output_channels, kernel_size=kernel_size, stride=stride, padding=padding, output_padding=output_padding) # upsample
+        self.bn1 = nn.BatchNorm2d(output_channels)
+        self.Lrelu1 = nn.LeakyReLU(True)
+        
+        self.conv2 = nn.Conv2d(output_channels, output_channels, kernel_size=kernel_size, stride=stride, padding=padding)
+        #self.ConvTrans2 = nn.ConvTranspose2d(output_channels, output_channels, kernel_size=kernel_size, stride=1, padding=padding) # no sizing
+        self.bn2 = nn.BatchNorm2d(output_channels)
+        self.Lrelu2 = nn.LeakyReLU(True)
+        
+        
+        nn.init.xavier_normal_(self.conv1.weight)
+        nn.init.xavier_normal_(self.conv2.weight)
+        #self.BN = nn.BatchNorm2d(OutChannel)
+    def forward(self, x):
+        x = self.up(x)
+        x = self.Lrelu1(self.bn1(self.conv1(x)))
+        #x = self.Lrelu1(self.ConvTrans1(x))
+        out = self.Lrelu2( self.bn2(self.conv2(x)))
+        #out = self.Lrelu2(self.ConvTrans2(x))
+        return out
+
+    
+class Decoder_module_upsampling(nn.Module):
+        def __init__(self):
+            super(Decoder_module_upsampling, self).__init__()
+            # input latent size 3 × 8 × 256  - HWC
+            self.DeConv_block1 = DeConv_block_upsampling(input_channels = 256, output_channels = 256, kernel_size=3, stride=1, padding=1, size=(5,15))
+            self.DeConv_block2 = DeConv_block_upsampling(input_channels = 256, output_channels = 256, kernel_size=3, stride=1, padding=1, size=(9,30))
+            self.DeConv_block3 = DeConv_block_upsampling(input_channels = 256, output_channels = 128, kernel_size=3, stride=1, padding=1, size=(18, 60))
+            self.DeConv_block4 = DeConv_block_upsampling(input_channels = 128, output_channels = 64, kernel_size=3, stride=1, padding=1, size=(35, 120))
+            #self.DeConv_block5 = DeConv_block(input_channels = output_channels, output_channels = output_channels, kernel_size=3, stride=1, padding=1, pooling=1)
+            self.up = nn.Upsample(size=(69, 240), mode='nearest')
+            self.Conv_last2 = nn.Conv2d(64, 32, kernel_size=3, stride=1, padding=1)
+            self.Lrelu = nn.LeakyReLU(True)
+            self.Conv_last = nn.Conv2d(32, 1, kernel_size=3, stride=1, padding=1)
+            #  output of size  69 × 240 (x 1) - HWC
+        def forward(self, x):
+            x = self.DeConv_block1(x)
+            x = self.DeConv_block2(x)
+            x = self.DeConv_block3(x)
+            x = self.DeConv_block4(x)
+            x = self.up(x)
+            x = self.Lrelu(self.Conv_last2(x))
+            out = self.Conv_last(x) # no acivation at last
+            return out
+
+class Convolutional_AE_AdaIN_Upsample(nn.Module):
+    def __init__(self):
+        super(Convolutional_AE_AdaIN_Upsample, self).__init__()
+        # input sample of size 69 × 240
+        self.Incoder_module = Encoder_module4AdaIN()
+        self.Decoder_module = Decoder_module_upsampling()
+    
+    def calc_mean_std(self, feat, eps=1e-5):
+        # eps is a small value added to the variance to avoid divide-by-zero.
+        size = feat.size()
+        assert (len(size) == 4)
+        N, C = size[:2]
+        feat_var = feat.view(N, C, -1).var(dim=2) + eps
+        feat_std = feat_var.sqrt().view(N, C, 1, 1)
+        feat_mean = feat.view(N, C, -1).mean(dim=2).view(N, C, 1, 1)
+        return feat_mean, feat_std
+    
+    def AdaIN(self, content_feat, style_feat):
+        assert (content_feat.size()[:2] == style_feat.size()[:2])
+        size = content_feat.size()
+        style_mean, style_std = self.calc_mean_std(style_feat)
+        content_mean, content_std = self.calc_mean_std(content_feat)
+
+        normalized_feat = (content_feat - content_mean.expand(size)) / content_std.expand(size)
+        return normalized_feat * style_std.expand(size) + style_mean.expand(size)
+    
+    def forward(self, content ,style):
+        content_latent, _, _, _, _ = self.Incoder_module(content)
+        
+        style_latent, style_feat1_1, styles_feat2_1, style_feat3_1, style_feat4_1 = self.Incoder_module(style)
+        
+        #AdaIN operation
+        transfered_latent = self.AdaIN(content_latent, style_latent)
+        
+        out = self.Decoder_module(transfered_latent)
+        out_latent, out_feat1_1, out_feat2_1, out_feat3_1, out_feat4_1 = self.Incoder_module(out)
+        
+        return out, out_latent, content_latent, [out_feat1_1, out_feat2_1, out_feat3_1, out_feat4_1], [style_feat1_1, styles_feat2_1, style_feat3_1, style_feat4_1] 
+    
+    
+    
+    
+if __name__ == '__main__':
         print("##Size Check")
         
-        print("##Encoding##")
+        '''print("##Encoding##")
         input = torch.randn(32, 1, 69, 240)
         print("input: ", input.shape)
         p = nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True)
@@ -240,7 +337,7 @@ class Convolutional_AE_AdaIN(nn.Module):
         output = p(output)
         print("output4: ", output.shape)
         output = p(output)
-        print("output5: ", output.shape)
+        print("output5: ", output.shape)'''
         
         
         print("##Decoding##")
@@ -263,9 +360,34 @@ class Convolutional_AE_AdaIN(nn.Module):
         output = m4(output)
         print("output5: ", output.shape)
         
-        print("##Decoding 2 same with convtrans##")
+        '''print("##Decoding 2 same with convtrans##")
         input = torch.randn(32, 32, 3, 8)
         print("input: ", input.shape)
         m = nn.ConvTranspose2d(32, 32, 3, 1, 1)
         output = m(input)
-        print("output: ", output.shape)
+        print("output: ", output.shape)'''
+        
+        
+        
+        print("##Decodin up sampleing##")
+        input = torch.randn(32, 32, 3, 8)
+        print("input: ", input.shape)
+        #in_channels, out_channels, kernel_size, stride=1, padding=0, output_padding
+        up = nn.Upsample(size =(5,15), mode='nearest')
+        up2 = nn.Upsample(size=(9,30), mode='nearest')
+        up3 = nn.Upsample(size=(18, 60), mode='nearest')
+        up4 = nn.Upsample(size=(35, 120), mode='nearest')
+        up5 = nn.Upsample(size=(69, 240), mode='nearest')
+        #m2 = nn.ConvTranspose2d(32, 32, 3, 2, 1, 1)
+        # 3, 8  / 2
+
+        output = up(input)
+        print("output1: ", output.shape)
+        output = up2(output)
+        print("output2: ", output.shape)
+        output = up3(output)
+        print("output3: ", output.shape)
+        output = up4(output)
+        print("output4: ", output.shape)
+        output = up5(output)
+        print("output5: ", output.shape)
