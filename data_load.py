@@ -103,10 +103,17 @@ class MotionLoader(Dataset):
             
             masked_input = gt_image.copy()
             mask_width = masking_length #+ self.noise(False) #55 ~ 65
-            
-            masking = np.zeros((orig_height, mask_width))# generate zeros matrix for masking: orig_height x mask_width
-            index = random.randint(0, orig_width - mask_width)# sampling the start point of masking 
-            masked_input[: , index : index+mask_width] = masking # masking
+            if self.IsTrain == True:
+                #In training step, randomly masking
+                masking = np.zeros((orig_height, mask_width))# generate zeros matrix for masking: orig_height x mask_width
+                index = random.randint(0, orig_width - mask_width)# sampling the start point of masking 
+                masked_input[: , index : index+mask_width] = masking # masking
+            else:
+                #In test phase, center of the data are masked
+                masking = np.zeros((orig_height, mask_width))# generate zeros matrix for masking: orig_height x mask_width
+                #index = random.randint(0, orig_width - mask_width)# sampling the start point of masking 
+                index = 120 - mask_width // 2
+                masked_input[: , index : index+mask_width] = masking # masking
             
             #print(np.sum(masked_input) == np.sum(gt_image))
             #return maksed_input and gt CHW #(69, 240) --> (1, 69, 240)

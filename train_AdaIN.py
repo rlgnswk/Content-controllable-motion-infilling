@@ -155,7 +155,7 @@ def main(args):
                 total_train_style_loss = 0
                  
                 
-        #validation per epoch ############
+        #############validation per epoch ############
         for iter, item in enumerate(zip(valid_dataloader,valid_style_dataloader)):
             model.eval()
             masked_content_input, gt_image, _, style_input = item
@@ -167,7 +167,6 @@ def main(args):
                 out, out_latent, content_latent, out_feat_list, style_feat_list = model(masked_content_input, style_input)
             style_val_loss = calc_style_loss(out_feat_list, style_feat_list, style_loss_function)
             val_loss = loss_function(out_latent, content_latent)
-            #val_loss_root = loss_function(pred[:, :, -7, :], gt_image[:, :, -7, :]) + loss_function(pred[:, :, -6, :], gt_image[:, :, -6, :]) +loss_function(pred[:, :, -5, :], gt_image[:, :, -5, :])
             
             total_val_loss = val_loss + 0.5 * style_val_loss
             total_v_loss += total_val_loss.item()

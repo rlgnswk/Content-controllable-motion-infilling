@@ -43,7 +43,7 @@ def main(args):
     
     saveUtils = utils.saveData(args)
     
-    writer = SummaryWriter("runs/"+ saveUtils.save_dir_tensorBoard)
+    writer = SummaryWriter(saveUtils.save_dir_tensorBoard)
     
     
     if args.model_type == 'VAE':
