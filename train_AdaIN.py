@@ -25,8 +25,8 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--name', type=str)
 parser.add_argument('--model_type', type=str, default='AE') 
-parser.add_argument('--datasetPath', type=str, default='C:/Users/VML/Desktop/2022_Spring/Motion_Graphics/Final_project/downloadCode/train_data/')
-parser.add_argument('--ValdatasetPath', type=str, default='C:/Users/VML/Desktop/2022_Spring/Motion_Graphics/Final_project/downloadCode/valid_data/')
+parser.add_argument('--datasetPath', type=str, default='/input/MotionInfillingData/train_data/')
+parser.add_argument('--ValdatasetPath', type=str, default='/input/MotionInfillingData/valid_data/')
 parser.add_argument('--saveDir', type=str, default='./experiment')
 parser.add_argument('--gpu', type=str, default='0', help='gpu')
 parser.add_argument('--numEpoch', type=int, default=200, help='input batch size for training')
@@ -67,7 +67,7 @@ def main(args):
     if args.model_type == 'VAE':
         model = models.Convolutional_VAE().to(device)
     else:
-        model = models.Convolutional_AE().to(device)
+        model = models.Convolutional_AE_AdaIN().to(device)
     
     
     #load pretrained Encoder weight only 
@@ -75,7 +75,7 @@ def main(args):
     
     
     saveUtils.save_log(str(args))
-    saveUtils.save_log(summary(model, (1,1,69,240)))
+    #saveUtils.save_log(str(summary(model, (1,1,69,240))))
     
     train_dataloader, train_dataset = data_load.get_dataloader(args.datasetPath , args.batchSize, IsNoise=False, \
                                                                             IsTrain=True, dataset_mean=None, dataset_std=None)
@@ -118,8 +118,9 @@ def main(args):
             
         for iter, item in enumerate(zip(train_dataloader,train_style_dataloader)):
             print_num +=1
-            
-            masked_content_input, gt_image, _, style_input = item
+            content_item, style_item = item
+            masked_content_input, gt_image = content_item
+            _, style_input = style_item
             masked_content_input = masked_content_input.to(device, dtype=torch.float)
             gt_image = gt_image.to(device, dtype=torch.float)
             style_input = style_input.to(device, dtype=torch.float)
@@ -158,7 +159,9 @@ def main(args):
         #############validation per epoch ############
         for iter, item in enumerate(zip(valid_dataloader,valid_style_dataloader)):
             model.eval()
-            masked_content_input, gt_image, _, style_input = item
+            content_item, style_item = item
+            masked_content_input, gt_image = content_item
+            _, style_input = style_item
             masked_content_input = masked_content_input.to(device, dtype=torch.float)
             gt_image = gt_image.to(device, dtype=torch.float)
             style_input = style_input.to(device, dtype=torch.float)

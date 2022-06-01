@@ -165,11 +165,11 @@ class Encoder_module4AdaIN(nn.Module):
             super(Encoder_module4AdaIN, self).__init__()
             #  input sample of size  69 × 240 (x 1) - BCHW B x 1 x 69 × 240 
             #  resized by pooling, not conv
-            self.Conv_block1 = Conv_block(input_channels = 1, output_channels = 32, kernel_size=3, stride=1, padding=1, pooling=2)
-            self.Conv_block2 = Conv_block(input_channels = 32, output_channels = 64, kernel_size=3, stride=1, padding=1, pooling=2)
-            self.Conv_block3 = Conv_block(input_channels = 64, output_channels = 128, kernel_size=3, stride=1, padding=1, pooling=2)
-            self.Conv_block4 = Conv_block(input_channels = 128, output_channels = 256, kernel_size=3, stride=1, padding=1, pooling=2)
-            self.Conv_block5 = Conv_block(input_channels = 256, output_channels = 256, kernel_size=3, stride=1, padding=1, pooling=2)
+            self.Conv_block1 = Conv_block4AdaIN(input_channels = 1, output_channels = 32, kernel_size=3, stride=1, padding=1, pooling=2)
+            self.Conv_block2 = Conv_block4AdaIN(input_channels = 32, output_channels = 64, kernel_size=3, stride=1, padding=1, pooling=2)
+            self.Conv_block3 = Conv_block4AdaIN(input_channels = 64, output_channels = 128, kernel_size=3, stride=1, padding=1, pooling=2)
+            self.Conv_block4 = Conv_block4AdaIN(input_channels = 128, output_channels = 256, kernel_size=3, stride=1, padding=1, pooling=2)
+            self.Conv_block5 = Conv_block4AdaIN(input_channels = 256, output_channels = 256, kernel_size=3, stride=1, padding=1, pooling=2)
             # output latent size 3 × 8 × 256  - HWC B x 256 x 3 × 8 
             self.IsVAE = IsVAE
             if self.IsVAE ==True:
