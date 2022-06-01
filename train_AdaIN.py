@@ -51,6 +51,11 @@ def main(args):
     else:
         model = models.Convolutional_AE().to(device)
     
+    
+    #load pretrained Encoder weight only 
+    #torch.load_dict(pre_model.Encoder)
+    
+    
     saveUtils.save_log(str(args))
     saveUtils.save_log(summary(model, (1,1,69,240)))
     

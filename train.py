@@ -72,8 +72,8 @@ def main(args):
         if train_dataset.masking_length_mean < 120 and num_epoch is not 0 and num_epoch%10 == 0:
             train_dataset.masking_length_mean = train_dataset.masking_length_mean + 10
             valid_dataset.masking_length_mean = train_dataset.masking_length_mean
-            train_dataloader = DataLoader(train_dataset, batch_size=args.batchSize, shuffle=True, drop_last=True, IsTrain=True)
-            valid_dataloader = DataLoader(valid_dataset, batch_size=args.batchSize, shuffle=True, drop_last=True, IsTrain=False)
+            train_dataloader = DataLoader(train_dataset, batch_size=args.batchSize, shuffle=True, drop_last=True)
+            valid_dataloader = DataLoader(valid_dataset, batch_size=args.batchSize, shuffle=True, drop_last=True)
             
             log = "Current train_dataset.masking_length_mean: %d" % train_dataset.masking_length_mean
             print(log)

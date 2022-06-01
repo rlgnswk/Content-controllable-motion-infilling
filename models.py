@@ -75,7 +75,9 @@ class DeConv_block(nn.Module):
         #self.BN = nn.BatchNorm2d(OutChannel)
     def forward(self, x):
         x = self.Lrelu1(self.bn1(self.ConvTrans1(x)))
+        #x = self.Lrelu1(self.ConvTrans1(x))
         out = self.Lrelu2( self.bn2(self.ConvTrans2(x)))
+        #out = self.Lrelu2(self.ConvTrans2(x))
         return out
     
     
@@ -131,11 +133,85 @@ class Convolutional_VAE(nn.Module):
         latent = self.sampling(mean, logvar)
         out = self.Decoder_module(latent)
         return out
+ 
+ 
+# Convolution Module
+class Conv_block4AdaIN(nn.Module):
+      def __init__(self, input_channels, output_channels, kernel_size=3, stride=1, padding=1, pooling=2):
+        super(Conv_block4AdaIN, self).__init__()
+        self.conv1 = nn.Conv2d(input_channels, output_channels, kernel_size=kernel_size, stride=stride, padding=padding)      
+        self.bn1 = nn.BatchNorm2d(output_channels)
+        self.Lrelu1 = nn.LeakyReLU(True)   
+         
+        self.conv2 = nn.Conv2d(output_channels, output_channels, kernel_size=kernel_size, stride=stride, padding=padding)  
+        self.bn2 = nn.BatchNorm2d(output_channels)       
+        self.Lrelu2 = nn.LeakyReLU(True)
+        # When ceil_mode=True, sliding windows are allowed to go off-bounds if they start within the left padding or the input. Sliding windows that would start in the right padded region are ignored.
+        self.mp = nn.MaxPool2d(kernel_size=pooling, stride=pooling, ceil_mode=True) 
+        #self.bn = nn.BatchNorm2d(output_channels)
+        
+        nn.init.xavier_normal_(self.conv1.weight)
+        nn.init.xavier_normal_(self.conv2.weight)
+         
+      def forward(self, x):
+        
+        feat = self.Lrelu1(self.bn1(self.conv1(x)))
+        out = self.mp(self.Lrelu2(self.bn2(self.conv2(feat))))
+        
+        return out, feat
     
+class Encoder_module4AdaIN(nn.Module):
+        def __init__(self, IsVAE=False):
+            super(Encoder_module4AdaIN, self).__init__()
+            #  input sample of size  69 × 240 (x 1) - BCHW B x 1 x 69 × 240 
+            #  resized by pooling, not conv
+            self.Conv_block1 = Conv_block(input_channels = 1, output_channels = 32, kernel_size=3, stride=1, padding=1, pooling=2)
+            self.Conv_block2 = Conv_block(input_channels = 32, output_channels = 64, kernel_size=3, stride=1, padding=1, pooling=2)
+            self.Conv_block3 = Conv_block(input_channels = 64, output_channels = 128, kernel_size=3, stride=1, padding=1, pooling=2)
+            self.Conv_block4 = Conv_block(input_channels = 128, output_channels = 256, kernel_size=3, stride=1, padding=1, pooling=2)
+            self.Conv_block5 = Conv_block(input_channels = 256, output_channels = 256, kernel_size=3, stride=1, padding=1, pooling=2)
+            # output latent size 3 × 8 × 256  - HWC B x 256 x 3 × 8 
+            self.IsVAE = IsVAE
+            if self.IsVAE ==True:
+                self.Conv_block_std = Conv_block(input_channels = 256, output_channels = 256, kernel_size=3, stride=1, padding=1, pooling=2)
+        def forward(self, x):
+            x, feat1_1= self.Conv_block1(x)
+            x, feat2_1 = self.Conv_block2(x)
+            x, feat3_1 = self.Conv_block3(x)
+            x, feat4_1 = self.Conv_block4(x)
+            out, _ = self.Conv_block5(x)
+
+            return out, feat1_1, feat2_1, feat3_1, feat4_1
+
+
+class Convolutional_AE_AdaIN(nn.Module):
+    def __init__(self):
+        super(Convolutional_AE_AdaIN, self).__init__()
+        # input sample of size 69 × 240
+        self.Incoder_module = Encoder_module4AdaIN()
+        self.Decoder_module = Decoder_module()
+
+    def AdaIN(self, content_latent, style_latent):
+        
+        transfered_latent = None
+        
+        return transfered_latent
+    
+    def forward(self, content ,style):
+        content_latent, _, _, _, _ = self.Incoder_module(content)
+        
+        style_latent, style_feat1_1, styles_feat2_1, style_feat3_1, style_feat4_1 = self.Incoder_module(style)
+        
+        #AdaIN operation
+        transfered_latent = self.AdaIN(content_latent, style_latent)
+        
+        out = self.Decoder_module(transfered_latent)
+        out_latent, out_feat1_1, out_feat2_1, out_feat3_1, out_feat4_1 = self.Incoder_module(out)
+        
+        return out, out_latent, [out_feat1_1, out_feat2_1, out_feat3_1, out_feat4_1], [style_feat1_1, styles_feat2_1, style_feat3_1, style_feat4_1]
     
     if __name__ == '__main__':
         print("##Size Check")
-        
         
         print("##Encoding##")
         input = torch.randn(32, 1, 69, 240)
