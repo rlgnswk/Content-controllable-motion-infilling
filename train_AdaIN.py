@@ -34,6 +34,16 @@ parser.add_argument('--batchSize', type=int, default=80, help='input batch size 
 parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
 args = parser.parse_args()
 
+def calc_mean_std( feat, eps=1e-5):
+    # eps is a small value added to the variance to avoid divide-by-zero.
+    size = feat.size()
+    assert (len(size) == 4)
+    N, C = size[:2]
+    feat_var = feat.view(N, C, -1).var(dim=2) + eps
+    feat_std = feat_var.sqrt().view(N, C, 1, 1)
+    feat_mean = feat.view(N, C, -1).mean(dim=2).view(N, C, 1, 1)
+    return feat_mean, feat_std
+
 
 def main(args):
     
@@ -74,6 +84,7 @@ def main(args):
     
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     loss_function = nn.L1Loss()
+    style_loss_function = nn.MSELoss()
     
     print_interval = 100
     print_num = 0
@@ -95,18 +106,24 @@ def main(args):
         for iter, item in enumerate(zip(train_dataloader,train_style_dataloader)):
             print_num +=1
             
-            masked_input, gt_image, _, style_image = item
-            masked_input = masked_input.to(device, dtype=torch.float)
+            masked_content_input, gt_image, _, style_input = item
+            masked_content_input = masked_content_input.to(device, dtype=torch.float)
             gt_image = gt_image.to(device, dtype=torch.float)
-            style_image = style_image.to(device, dtype=torch.float)
+            style_input = style_input.to(device, dtype=torch.float)
             
             
-            pred = model(masked_input)
+            _, out_latent, content_latent, out_feat_list, style_feat_list = model(masked_content_input, style_input)
             
-            train_loss = loss_function(pred, gt_image)
+            style_loss = 0
+            for i in range(len(out_feat_list)):
+                assert len(out_feat_list) == len(style_feat_list)
+                out_mean, out_std = calc_mean_std(out_feat_list[i])
+                style_mean, stlye_std = calc_mean_std(style_feat_list[i])
+                style_loss += (style_loss_function(out_mean, style_mean) + style_loss_function(out_std, stlye_std))
+            
+            train_loss = loss_function(out_latent, content_latent)
 
-
-            total_train_loss = train_loss #+ train_loss_root * 10
+            total_train_loss = train_loss + 0.5 * style_loss #+ train_loss_root * 10
             total_loss += total_train_loss.item()
             
             optimizer.zero_grad()

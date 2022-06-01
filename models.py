@@ -197,6 +197,25 @@ class Convolutional_AE_AdaIN(nn.Module):
         
         return transfered_latent
     
+    def calc_mean_std(self, feat, eps=1e-5):
+        # eps is a small value added to the variance to avoid divide-by-zero.
+        size = feat.size()
+        assert (len(size) == 4)
+        N, C = size[:2]
+        feat_var = feat.view(N, C, -1).var(dim=2) + eps
+        feat_std = feat_var.sqrt().view(N, C, 1, 1)
+        feat_mean = feat.view(N, C, -1).mean(dim=2).view(N, C, 1, 1)
+        return feat_mean, feat_std
+    
+    def AdaIN(self, content_feat, style_feat):
+        assert (content_feat.size()[:2] == style_feat.size()[:2])
+        size = content_feat.size()
+        style_mean, style_std = self.calc_mean_std(style_feat)
+        content_mean, content_std = self.calc_mean_std(content_feat)
+
+        normalized_feat = (content_feat - content_mean.expand(size)) / content_std.expand(size)
+        return normalized_feat * style_std.expand(size) + style_mean.expand(size)
+    
     def forward(self, content ,style):
         content_latent, _, _, _, _ = self.Incoder_module(content)
         
@@ -208,7 +227,7 @@ class Convolutional_AE_AdaIN(nn.Module):
         out = self.Decoder_module(transfered_latent)
         out_latent, out_feat1_1, out_feat2_1, out_feat3_1, out_feat4_1 = self.Incoder_module(out)
         
-        return out, out_latent, [out_feat1_1, out_feat2_1, out_feat3_1, out_feat4_1], [style_feat1_1, styles_feat2_1, style_feat3_1, style_feat4_1]
+        return out, out_latent, content_latent, [out_feat1_1, out_feat2_1, out_feat3_1, out_feat4_1], [style_feat1_1, styles_feat2_1, style_feat3_1, style_feat4_1]
     
     if __name__ == '__main__':
         print("##Size Check")
