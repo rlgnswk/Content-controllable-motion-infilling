@@ -140,25 +140,25 @@ class Conv_block4AdaIN(nn.Module):
       def __init__(self, input_channels, output_channels, kernel_size=3, stride=1, padding=1, pooling=2):
         super(Conv_block4AdaIN, self).__init__()
         self.conv1 = nn.Conv2d(input_channels, output_channels, kernel_size=kernel_size, stride=stride, padding=padding, padding_mode='reflect')      
-        #self.bn1 = nn.BatchNorm2d(output_channels)
+        self.bn1 = nn.BatchNorm2d(output_channels)
         self.Lrelu1 = nn.LeakyReLU(True)   
          
         self.conv2 = nn.Conv2d(output_channels, output_channels, kernel_size=kernel_size, stride=stride, padding=padding, padding_mode='reflect')  
-        #self.bn2 = nn.BatchNorm2d(output_channels)       
+        self.bn2 = nn.BatchNorm2d(output_channels)       
         self.Lrelu2 = nn.LeakyReLU(True)
         # When ceil_mode=True, sliding windows are allowed to go off-bounds if they start within the left padding or the input. Sliding windows that would start in the right padded region are ignored.
         self.mp = nn.MaxPool2d(kernel_size=pooling, stride=pooling, ceil_mode=True) 
-        #self.bn = nn.BatchNorm2d(output_channels)
         
-        nn.init.xavier_normal_(self.conv1.weight)
-        nn.init.xavier_normal_(self.conv2.weight)
+        
+        nn.init.kaiming_uniform_(self.conv1.weight)
+        nn.init.kaiming_uniform_(self.conv2.weight)
          
       def forward(self, x):
         
-        #feat = self.Lrelu1(self.bn1(self.conv1(x)))
-        feat = self.Lrelu1(self.conv1(x))
-        #out = self.mp(self.Lrelu2(self.bn2(self.conv2(feat))))
-        out = self.mp(self.Lrelu2(self.conv2(feat)))
+        feat = self.Lrelu1(self.bn1(self.conv1(x)))
+        #feat = self.Lrelu1(self.conv1(x))
+        out = self.mp(self.Lrelu2(self.bn2(self.conv2(feat))))
+        #out = self.mp(self.Lrelu2(self.conv2(feat)))
 
         return out, feat
     
@@ -223,7 +223,7 @@ class Convolutional_AE_AdaIN(nn.Module):
         out = self.Decoder_module(transfered_latent)
         out_latent, out_feat1_1, out_feat2_1, out_feat3_1, out_feat4_1 = self.Incoder_module(out)
         
-        return out, out_latent, content_latent, [out_feat1_1, out_feat2_1, out_feat3_1, out_feat4_1], [style_feat1_1, styles_feat2_1, style_feat3_1, style_feat4_1]
+        return out, out_latent, transfered_latent, [out_feat1_1, out_feat2_1, out_feat3_1, out_feat4_1], [style_feat1_1, styles_feat2_1, style_feat3_1, style_feat4_1]
     
     
     
@@ -235,23 +235,23 @@ class DeConv_block_upsampling(nn.Module):
         
         self.conv1 = nn.Conv2d(input_channels, output_channels, kernel_size=kernel_size, stride=stride, padding=padding, padding_mode='reflect')
         #self.ConvTrans1 = nn.ConvTranspose2d(input_channels, output_channels, kernel_size=kernel_size, stride=stride, padding=padding, output_padding=output_padding) # upsample
-        #self.bn1 = nn.BatchNorm2d(output_channels)
+        self.bn1 = nn.BatchNorm2d(output_channels)
         self.Lrelu1 = nn.LeakyReLU(True)
         
         self.conv2 = nn.Conv2d(output_channels, output_channels, kernel_size=kernel_size, stride=stride, padding=padding, padding_mode='reflect')
         #self.ConvTrans2 = nn.ConvTranspose2d(output_channels, output_channels, kernel_size=kernel_size, stride=1, padding=padding) # no sizing
-        #self.bn2 = nn.BatchNorm2d(output_channels)
+        self.bn2 = nn.BatchNorm2d(output_channels)
         self.Lrelu2 = nn.LeakyReLU(True)
         
         
-        nn.init.xavier_normal_(self.conv1.weight)
-        nn.init.xavier_normal_(self.conv2.weight)
+        nn.init.kaiming_uniform_(self.conv1.weight)
+        nn.init.kaiming_uniform_(self.conv2.weight)
         #self.BN = nn.BatchNorm2d(OutChannel)
     def forward(self, x):
         x = self.up(x)
-        x = self.Lrelu1(self.conv1(x))
+        x = self.Lrelu1(self.bn2(self.conv1(x)))
         #x = self.Lrelu1(self.ConvTrans1(x))
-        out = self.Lrelu2(self.conv2(x))
+        out = self.Lrelu2(self.bn2(self.conv2(x)))
         #out = self.Lrelu2(self.ConvTrans2(x))
         return out
 
@@ -266,9 +266,13 @@ class Decoder_module_upsampling(nn.Module):
             self.DeConv_block4 = DeConv_block_upsampling(input_channels = 128, output_channels = 64, kernel_size=3, stride=1, padding=1, size=(35, 120))
             #self.DeConv_block5 = DeConv_block(input_channels = output_channels, output_channels = output_channels, kernel_size=3, stride=1, padding=1, pooling=1)
             self.up = nn.Upsample(size=(69, 240), mode='nearest')
-            self.Conv_last2 = nn.Conv2d(64, 32, kernel_size=3, stride=1, padding=1)
+            self.Conv_last2 = nn.Conv2d(64, 32, kernel_size=3, stride=1, padding=1, padding_mode='reflect')
             self.Lrelu = nn.LeakyReLU(True)
-            self.Conv_last = nn.Conv2d(32, 1, kernel_size=3, stride=1, padding=1)
+            self.Conv_last = nn.Conv2d(32, 1, kernel_size=3, stride=1, padding=1, padding_mode='reflect')
+
+            nn.init.kaiming_uniform_(self.Conv_last2.weight)
+            nn.init.kaiming_uniform_(self.Conv_last.weight)
+
             #  output of size  69 × 240 (x 1) - HWC
         def forward(self, x):
             x = self.DeConv_block1(x)
@@ -317,7 +321,7 @@ class Convolutional_AE_AdaIN_Upsample(nn.Module):
         out = self.Decoder_module(transfered_latent)
         out_latent, out_feat1_1, out_feat2_1, out_feat3_1, out_feat4_1 = self.Incoder_module(out)
         
-        return out, out_latent, content_latent, [out_feat1_1, out_feat2_1, out_feat3_1, out_feat4_1], [style_feat1_1, styles_feat2_1, style_feat3_1, style_feat4_1] 
+        return out, out_latent, transfered_latent, [out_feat1_1, out_feat2_1, out_feat3_1, out_feat4_1], [style_feat1_1, styles_feat2_1, style_feat3_1, style_feat4_1] 
     
     
     

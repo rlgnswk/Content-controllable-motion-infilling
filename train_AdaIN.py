@@ -32,6 +32,7 @@ parser.add_argument('--gpu', type=str, default='0', help='gpu')
 parser.add_argument('--numEpoch', type=int, default=200, help='input batch size for training')
 parser.add_argument('--batchSize', type=int, default=80, help='input batch size for training')
 parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
+parser.add_argument('--Pretrained', type=bool, default=False, help='Use Pretrained model')
 args = parser.parse_args()
 
 def calc_mean_std( feat, eps=1e-5):
@@ -125,10 +126,10 @@ def main(args):
             gt_image = gt_image.to(device, dtype=torch.float)
             style_input = style_input.to(device, dtype=torch.float)
             
-            _, out_latent, content_latent, out_feat_list, style_feat_list = model(masked_content_input, style_input)
+            _, out_latent, transfered_latent, out_feat_list, style_feat_list = model(masked_content_input, style_input)
             
             style_loss = calc_style_loss(out_feat_list, style_feat_list, style_loss_function)
-            train_loss = loss_function(out_latent, content_latent)
+            train_loss = loss_function(out_latent, transfered_latent)
             
             total_train_loss = train_loss + 0.5 * style_loss 
             total_loss += total_train_loss.item()
@@ -167,9 +168,9 @@ def main(args):
             style_input = style_input.to(device, dtype=torch.float)
             
             with torch.no_grad():
-                out, out_latent, content_latent, out_feat_list, style_feat_list = model(masked_content_input, style_input)
+                out, out_latent, transfered_latent, out_feat_list, style_feat_list = model(masked_content_input, style_input)
             style_val_loss = calc_style_loss(out_feat_list, style_feat_list, style_loss_function)
-            val_loss = loss_function(out_latent, content_latent)
+            val_loss = loss_function(out_latent, transfered_latent)
             
             total_val_loss = val_loss + 0.5 * style_val_loss
             total_v_loss += total_val_loss.item()
