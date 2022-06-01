@@ -179,7 +179,7 @@ def main(args):
             model.train()
 
         
-        saveUtils.save_result(out, gt_image, masked_content_input, num_epoch)
+        saveUtils.save_result(out, gt_image, masked_content_input, style_input, num_epoch)
         valid_epoch_loss = total_v_loss/len(valid_dataloader)
         valid_epoch_content_loss = total_v_content_loss/len(valid_dataloader)
         valid_epoch_style_loss = total_v_style_loss/len(valid_dataloader)
