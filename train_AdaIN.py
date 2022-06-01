@@ -44,6 +44,14 @@ def calc_mean_std( feat, eps=1e-5):
     feat_mean = feat.view(N, C, -1).mean(dim=2).view(N, C, 1, 1)
     return feat_mean, feat_std
 
+def calc_style_loss(out_feat_list, style_feat_list, style_loss_function):
+    assert len(out_feat_list) == len(style_feat_list)
+    style_loss= 0
+    for i in range(len(out_feat_list)):
+        out_mean, out_std = calc_mean_std(out_feat_list[i])
+        style_mean, stlye_std = calc_mean_std(style_feat_list[i])
+        style_loss += (style_loss_function(out_mean, style_mean) + style_loss_function(out_std, stlye_std))
+    return style_loss
 
 def main(args):
     
@@ -72,14 +80,14 @@ def main(args):
     train_dataloader, train_dataset = data_load.get_dataloader(args.datasetPath , args.batchSize, IsNoise=False, \
                                                                             IsTrain=True, dataset_mean=None, dataset_std=None)
     
-    train_style_dataloader, style_train_dataset = data_load.get_dataloader(args.datasetPath , args.batchSize, IsNoise=False, \
+    train_style_dataloader, _ = data_load.get_dataloader(args.datasetPath , args.batchSize, IsNoise=False, \
                                                                             IsTrain=True, dataset_mean=None, dataset_std=None)
     
     
     valid_dataloader, valid_dataset = data_load.get_dataloader(args.ValdatasetPath , args.batchSize, IsNoise=False, \
                                                                             IsTrain=False, dataset_mean=None, dataset_std=None)
     
-    valid_style_dataloader, valid_style_dataset = data_load.get_dataloader(args.ValdatasetPath , args.batchSize, IsNoise=False, \
+    valid_style_dataloader, _ = data_load.get_dataloader(args.ValdatasetPath , args.batchSize, IsNoise=False, \
                                                                             IsTrain=False, dataset_mean=None, dataset_std=None)
     
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
@@ -91,7 +99,12 @@ def main(args):
     for num_epoch in range(args.numEpoch):
         
         total_loss = 0
+        total_train_content_loss = 0
+        total_train_style_loss = 0
+        
         total_v_loss = 0
+        total_v_content_loss = 0
+        total_v_style_loss = 0
         
         if train_dataset.masking_length_mean < 120 and num_epoch is not 0 and num_epoch%10 == 0:
             train_dataset.masking_length_mean = train_dataset.masking_length_mean + 10
@@ -111,20 +124,15 @@ def main(args):
             gt_image = gt_image.to(device, dtype=torch.float)
             style_input = style_input.to(device, dtype=torch.float)
             
-            
             _, out_latent, content_latent, out_feat_list, style_feat_list = model(masked_content_input, style_input)
             
-            style_loss = 0
-            for i in range(len(out_feat_list)):
-                assert len(out_feat_list) == len(style_feat_list)
-                out_mean, out_std = calc_mean_std(out_feat_list[i])
-                style_mean, stlye_std = calc_mean_std(style_feat_list[i])
-                style_loss += (style_loss_function(out_mean, style_mean) + style_loss_function(out_std, stlye_std))
-            
+            style_loss = calc_style_loss(out_feat_list, style_feat_list, style_loss_function)
             train_loss = loss_function(out_latent, content_latent)
-
-            total_train_loss = train_loss + 0.5 * style_loss #+ train_loss_root * 10
+            
+            total_train_loss = train_loss + 0.5 * style_loss 
             total_loss += total_train_loss.item()
+            total_train_content_loss += train_loss.item()
+            total_train_style_loss += style_loss.item()
             
             optimizer.zero_grad()
             total_train_loss.backward()
@@ -132,41 +140,54 @@ def main(args):
             optimizer.step()
             
             if iter % print_interval == 0 and iter != 0:
-                train_iter_loss =  total_loss*0.01
-                log = "Train: [Epoch %d][Iter %d] [Train Loss: %.4f]" % (num_epoch, iter, train_iter_loss)
+                train_iter_loss =  total_loss * 0.01
+                train_iter_content_loss = total_train_content_loss * 0.01
+                train_iter_style_loss = total_train_style_loss * 0.01
+                
+                log = "Train: [Epoch %d][Iter %d] [Total Train Loss: %.4f] [Content Train Loss: %.4f] [Style Train Loss: %.4f]" % (num_epoch, iter, train_iter_loss, train_iter_content_loss, train_iter_style_loss)
                 print(log)
                 saveUtils.save_log(log)
-                writer.add_scalar("Train Loss/ iter", train_iter_loss, print_num)
+                writer.add_scalar("Train Total Loss/ iter", train_iter_loss, print_num)
+                writer.add_scalar("Train Content Loss/ iter", train_iter_content_loss, print_num)
+                writer.add_scalar("Train Style Loss/ iter", train_iter_style_loss, print_num)
                 total_loss = 0
+                total_train_content_loss = 0
+                total_train_style_loss = 0
+                 
                 
         #validation per epoch ############
-        for iter, item in enumerate(valid_dataloader):
+        for iter, item in enumerate(zip(valid_dataloader,valid_style_dataloader)):
             model.eval()
-            masked_input, gt_image = item
-            masked_input = masked_input.to(device, dtype=torch.float)
+            masked_content_input, gt_image, _, style_input = item
+            masked_content_input = masked_content_input.to(device, dtype=torch.float)
             gt_image = gt_image.to(device, dtype=torch.float)
+            style_input = style_input.to(device, dtype=torch.float)
             
             with torch.no_grad():
-                pred = model(masked_input)
-
-            val_loss = loss_function(pred, gt_image.detach())
+                out, out_latent, content_latent, out_feat_list, style_feat_list = model(masked_content_input, style_input)
+            style_val_loss = calc_style_loss(out_feat_list, style_feat_list, style_loss_function)
+            val_loss = loss_function(out_latent, content_latent)
             #val_loss_root = loss_function(pred[:, :, -7, :], gt_image[:, :, -7, :]) + loss_function(pred[:, :, -6, :], gt_image[:, :, -6, :]) +loss_function(pred[:, :, -5, :], gt_image[:, :, -5, :])
             
-            total_val_loss = val_loss #+ val_loss_root * 10
+            total_val_loss = val_loss + 0.5 * style_val_loss
             total_v_loss += total_val_loss.item()
+            total_v_content_loss += val_loss.item()
+            total_v_style_loss += style_val_loss.item()
             
             model.train()
-            
-        #pred = data_load.De_normalize_data_dist(pred.detach().squeeze(1).permute(0,2,1).cpu().numpy(), 0.0, 1.0)
-        #gt_image = data_load.De_normalize_data_dist(gt_image.detach().squeeze(1).permute(0,2,1).cpu().numpy(), 0.0, 1.0)
-        #masked_input = data_load.De_normalize_data_dist(masked_input.detach().squeeze(1).permute(0,2,1).cpu().numpy(), 0.0, 1.0)
+
         
-        saveUtils.save_result(pred, gt_image, masked_input, num_epoch)
+        saveUtils.save_result(out, gt_image, masked_content_input, num_epoch)
         valid_epoch_loss = total_v_loss/len(valid_dataloader)
-        log = "Valid: [Epoch %d] [Valid Loss: %.4f]" % (num_epoch, valid_epoch_loss)
+        valid_epoch_content_loss = total_v_content_loss/len(valid_dataloader)
+        valid_epoch_style_loss = total_v_style_loss/len(valid_dataloader)
+        log = "Valid: [Epoch %d] [Valid Loss: %.4f] [Content Valid Loss: %.4f] [Style Valid Loss: %.4f]" % (num_epoch, valid_epoch_loss, valid_epoch_content_loss, valid_epoch_style_loss)
         print(log)
         saveUtils.save_log(log)
-        writer.add_scalar("Valid Loss/ Epoch", valid_epoch_loss, num_epoch)    
+        writer.add_scalar("Valid Total Loss/ Epoch", valid_epoch_loss, num_epoch)
+        writer.add_scalar("Valid Content Loss/ Epoch", valid_epoch_content_loss, num_epoch) 
+        writer.add_scalar("Valid Style Loss/ Epoch", valid_epoch_style_loss, num_epoch) 
+
         saveUtils.save_model(model, num_epoch) # save model per epoch
         #validation per epoch ############
         

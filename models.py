@@ -190,12 +190,6 @@ class Convolutional_AE_AdaIN(nn.Module):
         # input sample of size 69 × 240
         self.Incoder_module = Encoder_module4AdaIN()
         self.Decoder_module = Decoder_module()
-
-    def AdaIN(self, content_latent, style_latent):
-        
-        transfered_latent = None
-        
-        return transfered_latent
     
     def calc_mean_std(self, feat, eps=1e-5):
         # eps is a small value added to the variance to avoid divide-by-zero.
