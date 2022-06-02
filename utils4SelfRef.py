@@ -95,6 +95,6 @@ class saveData():
             plt.clim(-100, 50)
             #plt.axis('off')
             plt.title("style_input", fontsize=25)
-            plt.savefig(self.save_dir_validation + '/epoch_'+ str(epoch) +'out_style_B_Content_A'+str(i)+'.png')
+            plt.savefig(self.save_dir_validation + '/epoch_'+ str(epoch) +'out_style_A_Content_A'+str(i)+'.png')
         
         plt.close('all')
