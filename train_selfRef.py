@@ -32,7 +32,7 @@ parser.add_argument('--gpu', type=str, default='0', help='gpu')
 parser.add_argument('--numEpoch', type=int, default=200, help='input batch size for training')
 parser.add_argument('--batchSize', type=int, default=80, help='input batch size for training')
 parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
-parser.add_argument('--weight_recon', type=float, default=0.001, help='learning rate')
+parser.add_argument('--weight_recon', type=float, default=0.1, help='learning rate')
 parser.add_argument('--weight_content', type=float, default=10.0, help='learning rate')
 parser.add_argument('--weight_style', type=float, default=10.0, help='learning rate')
 parser.add_argument('--weight_output_style', type=float, default=1.0, help='learning rate')
@@ -244,7 +244,7 @@ def main(args):
         valid_epoch_content_loss = total_v_content_loss/len(valid_dataloader)
         valid_epoch_style_loss = total_v_style_loss/len(valid_dataloader)
         valid_epoch_output_style_loss = total_v_output_style_loss/len(valid_dataloader)
-        log = "Valid: [Epoch %d] [Valid Loss: %.4f] [Recon Loss: %.4f] [Content Latent Loss: %.4f] [Style Latent Loss: %.4f] [Style Latent Loss: %.4f] [Output Style Latent Loss: %.4f]" %\
+        log = "Valid: [Epoch %d] [Valid Loss: %.4f] [Recon Loss: %.4f] [Content Latent Loss: %.4f] [Style Latent Loss: %.4f] [Output Style Latent Loss: %.4f]" %\
                                              (num_epoch, valid_epoch_loss, valid_epoch_recon_loss, valid_epoch_content_loss, valid_epoch_style_loss, valid_epoch_output_style_loss)
         print(log)
         saveUtils.save_log(log)
