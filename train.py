@@ -15,7 +15,7 @@ import os
 
 from torchinfo import summary
 
-import models
+import as models
 import utils
 import data_load
 #input sample of size 69 × 240

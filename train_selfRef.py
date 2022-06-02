@@ -107,12 +107,14 @@ def main(args):
         total_train_recon_loss = 0
         total_train_content_loss = 0
         total_train_style_loss = 0
-        
+        total_train_output_style_loss = 0
+
         total_v_loss = 0
         total_v_recon_loss = 0
         total_v_content_loss = 0
         total_v_style_loss = 0
-        
+        total_v_output_style_loss = 0
+
         if train_dataset.masking_length_mean < 120 and num_epoch is not 0 and num_epoch%10 == 0:
             train_dataset.masking_length_mean = train_dataset.masking_length_mean + 10
             valid_dataset.masking_length_mean = train_dataset.masking_length_mean
@@ -156,12 +158,13 @@ def main(args):
             content_total = (loss_content_latent_a + loss_content_latent_b) *args.weight_content
             style_total = (loss_style_latent_a + loss_style_latent_b) * args.weight_style
             
-            total_train_loss =  recon_total + content_total + style_total
+            total_train_loss =  recon_total + content_total + style_total + output_style_losss
             
             total_loss += total_train_loss.item()
             total_train_recon_loss += recon_total.item()
             total_train_content_loss += content_total.item()
             total_train_style_loss += style_total.item()
+            total_train_output_style_loss += output_style_losss.item()
             
             optimizer.zero_grad()
             total_train_loss.backward()
@@ -173,19 +176,22 @@ def main(args):
                 total_train_recon_loss = total_train_recon_loss * 0.01
                 train_iter_content_loss = total_train_content_loss * 0.01
                 train_iter_style_loss = total_train_style_loss * 0.01
-                
-                log = "Train: [Epoch %d][Iter %d] [Valid Loss: %.4f] [Recon Loss: %.4f] [Content Latent Loss: %.4f] [Style Latent Loss: %.4f]" %\
-                                             (num_epoch, iter, train_iter_loss, total_train_recon_loss, train_iter_content_loss, train_iter_style_loss)
+                train_iter_output_style_loss = total_train_output_style_loss * 0.01
+
+                log = "Train: [Epoch %d][Iter %d] [Valid Loss: %.4f] [Recon Loss: %.4f] [Content Latent Loss: %.4f] [Style Latent Loss: %.4f] [Output Style Latent Loss: %.4f]" %\
+                                             (num_epoch, iter, train_iter_loss, total_train_recon_loss, train_iter_content_loss, train_iter_style_loss, train_iter_output_style_loss)
                 print(log)
                 saveUtils.save_log(log)
                 writer.add_scalar("Train Total Loss/ iter", train_iter_loss, print_num)
                 writer.add_scalar("Train Recon Loss/ iter", total_train_recon_loss, print_num)
                 writer.add_scalar("Train Content Loss/ iter", train_iter_content_loss, print_num)
                 writer.add_scalar("Train Style Loss/ iter", train_iter_style_loss, print_num)
+                writer.add_scalar("Train Output Style Loss/ iter", train_iter_output_style_loss, print_num)
                 total_loss = 0
                 total_train_recon_loss = 0
                 total_train_content_loss = 0
                 total_train_style_loss = 0
+                total_train_output_style_loss = 0
                  
                 
         #############validation per epoch ############
@@ -206,6 +212,9 @@ def main(args):
             reconstruction_loss_a = loss_function(motion_a, out_style_A_Content_A)
             reconstruction_loss_b = loss_function(motion_b, out_style_B_Content_B)
             
+            style_loss_a = calc_style_loss(motion_a, out_style_A_Content_B, style_loss_function)
+            style_loss_b = calc_style_loss(motion_b, out_style_B_Content_A, style_loss_function)
+
             loss_content_latent_a = loss_function(content_latent_a, content_latent_out_style_B_Content_A)
             loss_content_latent_b = loss_function(content_latent_b, content_latent_out_style_A_Content_B)
             
@@ -213,17 +222,18 @@ def main(args):
             loss_style_latent_b = loss_function(style_latent_b, style_latent_out_style_B_Content_A)
             
 
-            recon_total = reconstruction_loss_a + reconstruction_loss_b
-            content_total = loss_content_latent_a + loss_content_latent_b
-            style_total = loss_style_latent_a + loss_style_latent_b
+            recon_total = (reconstruction_loss_a + reconstruction_loss_b) * args.weight_recon
+            output_style_losss = (style_loss_a + style_loss_b) * args.weight_output_style
+            content_total = (loss_content_latent_a + loss_content_latent_b) *args.weight_content
+            style_total = (loss_style_latent_a + loss_style_latent_b) * args.weight_style
             
-            total_val_loss =  recon_total + content_total + style_total
+            total_val_loss =  recon_total + content_total + style_total + output_style_losss
             
             total_v_loss += total_val_loss.item()
             total_v_recon_loss += recon_total.item()
             total_v_content_loss += content_total.item()
             total_v_style_loss += style_total.item()
-
+            total_v_output_style_loss += output_style_losss.item()
             
             model.train()
 
@@ -233,14 +243,16 @@ def main(args):
         valid_epoch_recon_loss = total_v_recon_loss/len(valid_dataloader)
         valid_epoch_content_loss = total_v_content_loss/len(valid_dataloader)
         valid_epoch_style_loss = total_v_style_loss/len(valid_dataloader)
-        log = "Valid: [Epoch %d] [Valid Loss: %.4f] [Recon Loss: %.4f] [Content Latent Loss: %.4f] [Style Latent Loss: %.4f]" %\
-                                             (num_epoch, valid_epoch_loss, valid_epoch_recon_loss, valid_epoch_content_loss, valid_epoch_style_loss)
+        valid_epoch_output_style_loss = total_v_output_style_loss/len(valid_dataloader)
+        log = "Valid: [Epoch %d] [Valid Loss: %.4f] [Recon Loss: %.4f] [Content Latent Loss: %.4f] [Style Latent Loss: %.4f] [Style Latent Loss: %.4f] [Output Style Latent Loss: %.4f]" %\
+                                             (num_epoch, valid_epoch_loss, valid_epoch_recon_loss, valid_epoch_content_loss, valid_epoch_style_loss, valid_epoch_output_style_loss)
         print(log)
         saveUtils.save_log(log)
         writer.add_scalar("Valid Total Loss/ Epoch", valid_epoch_loss, num_epoch)
         writer.add_scalar("Valid Recon Loss/ Epoch", valid_epoch_recon_loss, num_epoch) 
         writer.add_scalar("Valid Content Loss/ Epoch", valid_epoch_content_loss, num_epoch) 
         writer.add_scalar("Valid Style Loss/ Epoch", valid_epoch_style_loss, num_epoch) 
+        writer.add_scalar("Valid Output Style Loss/ Epoch", valid_epoch_output_style_loss, num_epoch) 
 
         saveUtils.save_model(model, num_epoch) # save model per epoch
         #validation per epoch ############
