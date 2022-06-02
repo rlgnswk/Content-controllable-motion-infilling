@@ -177,7 +177,7 @@ def main(args):
                 train_iter_style_loss = total_train_style_loss * 0.01
                 train_iter_output_style_loss = total_train_output_style_loss * 0.01
 
-                log = "Train: [Epoch %d][Iter %d] [Valid Loss: %.4f] [Recon Loss: %.4f] [Content Latent Loss: %.4f] [Style Latent Loss: %.4f] [Output Style Latent Loss: %.4f]" %\
+                log = "Train: [Epoch %d][Iter %d] [Train Loss: %.4f] [Recon Loss: %.4f] [Content Latent Loss: %.4f] [Style Latent Loss: %.4f] [Output Style Latent Loss: %.4f]" %\
                                              (num_epoch, iter, train_iter_loss, total_train_recon_loss, train_iter_content_loss, train_iter_style_loss, train_iter_output_style_loss)
                 print(log)
                 saveUtils.save_log(log)
