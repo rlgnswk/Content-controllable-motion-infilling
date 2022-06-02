@@ -59,7 +59,6 @@ def calc_style_loss(out_feat_list, style_feat_list, style_loss_function):
     return style_loss
 
 
-
 def main(args):
     
     os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   

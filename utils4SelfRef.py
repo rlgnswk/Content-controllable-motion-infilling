@@ -59,7 +59,7 @@ class saveData():
         np.save(self.save_dir_validation + '/epoch_' + str(epoch) + "motion_a", motion_a)
         np.save(self.save_dir_validation + '/epoch_' + str(epoch) + "motion_b", motion_b)
         np.save(self.save_dir_validation + '/epoch_' + str(epoch) + "out_style_B_Content_A", out_style_B_Content_A)
-        np.save(self.save_dir_validation + '/epoch_' + str(epoch) + "out_style_B_Content_A", out_style_A_Content_A)
+        np.save(self.save_dir_validation + '/epoch_' + str(epoch) + "out_style_A_Content_A", out_style_A_Content_A)
 
         cmap = plt.get_cmap('jet') 
         
@@ -68,7 +68,7 @@ class saveData():
             plt.matshow(motion_a[i], cmap=cmap)
             plt.clim(-100, 50)
             #plt.axis('off')
-            plt.title("prediction", fontsize=25)
+            plt.title("motion_a", fontsize=25)
             plt.savefig(self.save_dir_validation + '/epoch_'+ str(epoch) +'motion_a'+str(i)+'.png')
             
         for i in range(1): 
@@ -76,7 +76,7 @@ class saveData():
             plt.matshow(motion_b[i], cmap=cmap)
             plt.clim(-100, 50)
             #plt.axis('off')
-            plt.title("gt", fontsize=25)
+            plt.title("motion_b", fontsize=25)
             plt.savefig(self.save_dir_validation + '/epoch_'+ str(epoch) +'motion_b'+str(i)+'.png')  
             
         for i in range(1): 
@@ -85,7 +85,7 @@ class saveData():
             #plt.matshow(np.zeros(masked_input[i].shape), cmap=cmap)
             plt.clim(-100, 50)
             #plt.axis('off')
-            plt.title("masked_input", fontsize=25)
+            plt.title("out_style_B_Content_A", fontsize=25)
             plt.savefig(self.save_dir_validation + '/epoch_'+ str(epoch) +'out_style_B_Content_A'+str(i)+'.png')
 
         for i in range(1): 
@@ -94,7 +94,7 @@ class saveData():
             #plt.matshow(np.zeros(masked_input[i].shape), cmap=cmap)
             plt.clim(-100, 50)
             #plt.axis('off')
-            plt.title("style_input", fontsize=25)
+            plt.title("out_style_A_Content_A", fontsize=25)
             plt.savefig(self.save_dir_validation + '/epoch_'+ str(epoch) +'out_style_A_Content_A'+str(i)+'.png')
         
         plt.close('all')
