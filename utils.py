@@ -6,6 +6,8 @@ from torchvision.utils import save_image
 import numpy as np
 import matplotlib.pyplot as plt
 
+
+
 class saveData():
     def __init__(self, args):
         self.args = args

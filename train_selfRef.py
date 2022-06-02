@@ -35,7 +35,29 @@ parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
 parser.add_argument('--weight_recon', type=float, default=0.001, help='learning rate')
 parser.add_argument('--weight_content', type=float, default=10.0, help='learning rate')
 parser.add_argument('--weight_style', type=float, default=10.0, help='learning rate')
+parser.add_argument('--weight_output_style', type=float, default=1.0, help='learning rate')
 args = parser.parse_args()
+
+
+def calc_mean_std( feat, eps=1e-5):
+    # eps is a small value added to the variance to avoid divide-by-zero.
+    size = feat.size()
+    assert (len(size) == 4)
+    N, C = size[:2]
+    feat_var = feat.view(N, C, -1).var(dim=2) + eps
+    feat_std = feat_var.sqrt().view(N, C, 1, 1)
+    feat_mean = feat.view(N, C, -1).mean(dim=2).view(N, C, 1, 1)
+    return feat_mean, feat_std
+
+def calc_style_loss(out_feat_list, style_feat_list, style_loss_function):
+    assert len(out_feat_list) == len(style_feat_list)
+    style_loss= 0
+    
+    out_mean, out_std = calc_mean_std(out_feat_list)
+    style_mean, stlye_std = calc_mean_std(style_feat_list)
+    style_loss = (style_loss_function(out_mean, style_mean) + style_loss_function(out_std, stlye_std))
+    return style_loss
+
 
 
 def main(args):
@@ -119,6 +141,9 @@ def main(args):
             reconstruction_loss_a = loss_function(motion_a, out_style_A_Content_A)
             reconstruction_loss_b = loss_function(motion_b, out_style_B_Content_B)
             
+            style_loss_a = calc_style_loss(motion_a, out_style_A_Content_B, style_loss_function)
+            style_loss_b = calc_style_loss(motion_b, out_style_B_Content_A, style_loss_function)
+            
             loss_content_latent_a = loss_function(content_latent_a, content_latent_out_style_B_Content_A)
             loss_content_latent_b = loss_function(content_latent_b, content_latent_out_style_A_Content_B)
             
@@ -127,6 +152,7 @@ def main(args):
 
 
             recon_total = (reconstruction_loss_a + reconstruction_loss_b) * args.weight_recon
+            output_style_losss = (style_loss_a + style_loss_b) * args.weight_output_style
             content_total = (loss_content_latent_a + loss_content_latent_b) *args.weight_content
             style_total = (loss_style_latent_a + loss_style_latent_b) * args.weight_style
             

@@ -107,9 +107,9 @@ if __name__ == '__main__':
 
     data_path = "C:/Users/VML/Documents/GitHub/Motion_Style_Infilling/experiment/"+args.name +"/validation/"
     epoch = args.epoch
-    db_GT = 'epoch_'+str(epoch)+'_GT.npy'
-    db_Results = 'epoch_'+str(epoch)+'_Results.npy'
-    db_Input = 'epoch_'+str(epoch)+'_Masked_Input.npy'
+    db_GT = 'epoch_'+str(epoch)+'_motion_A.npy'
+    db_Results = 'epoch_'+str(epoch)+'_motion_B.npy'
+    db_Input = 'epoch_'+str(epoch)+'_A_style_A.npy'
     
     database_GT= np.load(os.path.join(data_path, db_GT))
     #print(database.shape)
