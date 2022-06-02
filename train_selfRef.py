@@ -32,9 +32,9 @@ parser.add_argument('--gpu', type=str, default='0', help='gpu')
 parser.add_argument('--numEpoch', type=int, default=200, help='input batch size for training')
 parser.add_argument('--batchSize', type=int, default=80, help='input batch size for training')
 parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
-parser.add_argument('--weight_recon', type=float, default=0.1, help='learning rate')
-parser.add_argument('--weight_content', type=float, default=10.0, help='learning rate')
-parser.add_argument('--weight_style', type=float, default=10.0, help='learning rate')
+parser.add_argument('--weight_recon', type=float, default=1.0, help='learning rate')
+parser.add_argument('--weight_content', type=float, default=1.0, help='learning rate')
+parser.add_argument('--weight_style', type=float, default=1.0, help='learning rate')
 parser.add_argument('--weight_output_style', type=float, default=1.0, help='learning rate')
 args = parser.parse_args()
 
@@ -57,6 +57,23 @@ def calc_style_loss(out_feat_list, style_feat_list, style_loss_function):
     style_mean, stlye_std = calc_mean_std(style_feat_list)
     style_loss = (style_loss_function(out_mean, style_mean) + style_loss_function(out_std, stlye_std))
     return style_loss
+
+
+
+def gram_matrix(input):
+    a, b, c, d = input.size()  # a=batch size(=1)
+    # b=number of feature maps
+    # (c,d)=dimensions of a f. map (N=c*d)
+
+    features = input.view(a * b, c * d)  # resise F_XL into \hat F_XL
+
+    G = torch.mm(features, features.t())  # compute the gram product
+
+    # we 'normalize' the values of the gram matrix
+    # by dividing by the number of element in each feature maps.
+    return G.div(a * b * c * d)
+
+
 
 
 def main(args):
@@ -136,8 +153,10 @@ def main(args):
             out_style_B_Content_A, out_style_A_Content_B, content_latent_a, style_latent_b, content_latent_b, style_latent_a  = model(motion_a, motion_b)
             
 
-            out_style_A_Content_A, out_style_B_Content_B, content_latent_out_style_B_Content_A, style_latent_out_style_A_Content_B, content_latent_out_style_A_Content_B, style_latent_out_style_B_Content_A \
-                                                                                                                                                                = model(out_style_B_Content_A, out_style_A_Content_B)
+            out_style_A_Content_A, out_style_B_Content_B, \
+                    content_latent_out_style_B_Content_A, style_latent_out_style_A_Content_B, \
+                            content_latent_out_style_A_Content_B, style_latent_out_style_B_Content_A \
+                                    = model(out_style_B_Content_A, out_style_A_Content_B)
 
             reconstruction_loss_a = loss_function(motion_a, out_style_A_Content_A)
             reconstruction_loss_b = loss_function(motion_b, out_style_B_Content_B)
