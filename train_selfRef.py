@@ -16,7 +16,7 @@ import os
 from torchinfo import summary
 
 import models_selfRef as models
-import utils
+import utils4SelfRef as utils
 import data_load
 #input sample of size 69 × 240
 #latent space 3 × 8 × 256 tensor
@@ -32,6 +32,9 @@ parser.add_argument('--gpu', type=str, default='0', help='gpu')
 parser.add_argument('--numEpoch', type=int, default=200, help='input batch size for training')
 parser.add_argument('--batchSize', type=int, default=80, help='input batch size for training')
 parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
+parser.add_argument('--weight_recon', type=float, default=0.001, help='learning rate')
+parser.add_argument('--weight_content', type=float, default=10.0, help='learning rate')
+parser.add_argument('--weight_style', type=float, default=10.0, help='learning rate')
 args = parser.parse_args()
 
 
@@ -123,9 +126,9 @@ def main(args):
             loss_style_latent_b = loss_function(style_latent_b, style_latent_out_style_B_Content_A)
 
 
-            recon_total = reconstruction_loss_a + reconstruction_loss_b
-            content_total = loss_content_latent_a + loss_content_latent_b
-            style_total = loss_style_latent_a + loss_style_latent_b
+            recon_total = (reconstruction_loss_a + reconstruction_loss_b) * args.weight_recon
+            content_total = (loss_content_latent_a + loss_content_latent_b) *args.weight_content
+            style_total = (loss_style_latent_a + loss_style_latent_b) * args.weight_style
             
             total_train_loss =  recon_total + content_total + style_total
             
@@ -198,7 +201,7 @@ def main(args):
             
             model.train()
 
-        
+        #pred, gt, masked_input, style_input,
         saveUtils.save_result(motion_a, motion_b, out_style_B_Content_A, out_style_A_Content_A, num_epoch)
         valid_epoch_loss = total_v_loss/len(valid_dataloader)
         valid_epoch_recon_loss = total_v_recon_loss/len(valid_dataloader)
