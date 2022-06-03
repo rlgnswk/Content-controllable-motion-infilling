@@ -161,6 +161,7 @@ def main(args):
             reconstruction_loss_a = loss_function(motion_a, out_style_A_Content_A)
             reconstruction_loss_b = loss_function(motion_b, out_style_B_Content_B)
             
+            ## between feature 로 output은 receptive field도 작고 채널도 하나이다! # 하지만 GT가 없는데? =-> pretrained 된 network가 필요한듯.. -> AdaIN
             style_loss_a = calc_style_loss(motion_a, out_style_A_Content_B, style_loss_function)
             style_loss_b = calc_style_loss(motion_b, out_style_B_Content_A, style_loss_function)
             

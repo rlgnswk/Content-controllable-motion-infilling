@@ -34,5 +34,10 @@ recon 1.0 일떄 (style loss x ) A-> A는 잘 되는편
 
 recon weight넣어서 줄이니까 움직이지도 않음.
 
-
 디노이징(빈칸 x , 노이즈만 첨가)은 VAE, AE 모두 잘 됨
+
+GANbased는 일단 학습이 안됨 그냥 서있음.
+
+selfRef_sameWeights 뭔가 망가지진 않는데, 뭘 보고 배우는지 모르겠음 하나의 인풋 하나의 스타일로 매칭되는 결과는 아님.
+
+baseline으로 motion blending한거를 사용해야 할수도 있음 . -> VAE로 가정 넣어서 latent space에서 affine transform ㄱㄱ

@@ -1,21 +1,20 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 # Convolution Module
-class Conv_block(nn.Module):
+class Conv_block_IN(nn.Module):
       def __init__(self, input_channels, output_channels, kernel_size=3, stride=1, padding=1, pooling=2):
-        super(Conv_block, self).__init__()
+        super(Conv_block_IN, self).__init__()
         self.conv1 = nn.Conv2d(input_channels, output_channels, kernel_size=kernel_size, stride=stride, padding=padding)
         
         
-        self.bn1 = nn.BatchNorm2d(output_channels)
+        self.in1 = nn.InstanceNorm2d(output_channels)
 
         self.Lrelu1 = nn.LeakyReLU(True)
         
         self.conv2 = nn.Conv2d(output_channels, output_channels, kernel_size=kernel_size, stride=stride, padding=padding)
         
-        self.bn2 = nn.BatchNorm2d(output_channels)
+        self.in2 = nn.InstanceNorm2d(output_channels)
         
         self.Lrelu2 = nn.LeakyReLU(True)
         
@@ -28,34 +27,28 @@ class Conv_block(nn.Module):
          
       def forward(self, x):
         
-        x = self.Lrelu1(self.bn1(self.conv1(x)))
-        out = self.mp(self.Lrelu2(self.bn2(self.conv2(x))))
+        x = self.Lrelu1(self.in1(self.conv1(x)))
+        out = self.mp(self.Lrelu2(self.in2(self.conv2(x))))
         
         return out
     
-class Encoder_module(nn.Module):
+class Encoder_module_IN(nn.Module):
         def __init__(self, IsVAE=False):
-            super(Encoder_module, self).__init__()
+            super(Encoder_module_IN, self).__init__()
             #  input sample of size  69 × 240 (x 1) - BCHW B x 1 x 69 × 240 
             #  resized by pooling, not conv
-            self.Conv_block1 = Conv_block(input_channels = 1, output_channels = 32, kernel_size=3, stride=1, padding=1, pooling=2)
-            self.Conv_block2 = Conv_block(input_channels = 32, output_channels = 64, kernel_size=3, stride=1, padding=1, pooling=2)
-            self.Conv_block3 = Conv_block(input_channels = 64, output_channels = 128, kernel_size=3, stride=1, padding=1, pooling=2)
-            self.Conv_block4 = Conv_block(input_channels = 128, output_channels = 256, kernel_size=3, stride=1, padding=1, pooling=2)
-            self.Conv_block5 = Conv_block(input_channels = 256, output_channels = 256, kernel_size=3, stride=1, padding=1, pooling=2)
+            self.Conv_block1 = Conv_block_IN(input_channels = 1, output_channels = 32, kernel_size=3, stride=1, padding=1, pooling=2)
+            self.Conv_block2 = Conv_block_IN(input_channels = 32, output_channels = 64, kernel_size=3, stride=1, padding=1, pooling=2)
+            self.Conv_block3 = Conv_block_IN(input_channels = 64, output_channels = 128, kernel_size=3, stride=1, padding=1, pooling=2)
+            self.Conv_block4 = Conv_block_IN(input_channels = 128, output_channels = 256, kernel_size=3, stride=1, padding=1, pooling=2)
+            self.Conv_block5 = Conv_block_IN(input_channels = 256, output_channels = 256, kernel_size=3, stride=1, padding=1, pooling=2)
             # output latent size 3 × 8 × 256  - HWC B x 256 x 3 × 8 
-            self.IsVAE = IsVAE
-            if self.IsVAE ==True:
-                self.Conv_block_std = Conv_block(input_channels = 256, output_channels = 256, kernel_size=3, stride=1, padding=1, pooling=2)
         def forward(self, x):
             x = self.Conv_block1(x)
             x = self.Conv_block2(x)
             x = self.Conv_block3(x)
             x = self.Conv_block4(x)
             out = self.Conv_block5(x)
-            if self.IsVAE == True:
-                logvar = self.Conv_block_std(x)
-                return out , logvar
             return out
 
 class DeConv_block(nn.Module):
@@ -102,132 +95,7 @@ class Decoder_module(nn.Module):
             x = self.Lrelu(self.ConvTrans_last2(x))
             out = self.ConvTrans_last(x) # no acivation at last
             return out
-        
-        
-class Convolutional_AE(nn.Module):
-    def __init__(self):
-        super(Convolutional_AE, self).__init__()
-        # input sample of size 69 × 240
-        self.Incoder_module = Encoder_module()
-        self.Decoder_module = Decoder_module()
 
-    def forward(self, x):
-        latent = self.Incoder_module(x)
-        out = self.Decoder_module(latent)
-        return out
-    
-class Convolutional_VAE(nn.Module):
-    def __init__(self):
-        super(Convolutional_VAE, self).__init__()
-        # input sample of size 69 × 240
-        self.Incoder_module = Encoder_module(IsVAE=True)
-        self.Decoder_module = Decoder_module()
-        
-    def sampling(self, mean, logvar):
-        std = torch.exp(0.5 * logvar)
-        eps = torch.randn_like(std)
-        return eps * std + mean
-    
-    def forward(self, x):
-        mean, logvar = self.Incoder_module(x)
-        latent = self.sampling(mean, logvar)
-        out = self.Decoder_module(latent)
-        return out
- 
- 
-# Convolution Module
-class Conv_block4AdaIN(nn.Module):
-    def __init__(self, input_channels, output_channels, kernel_size=3, stride=1, padding=1, pooling=2):
-        super(Conv_block4AdaIN, self).__init__()
-        self.conv1 = nn.Conv2d(input_channels, output_channels, kernel_size=kernel_size, stride=stride, padding=padding, padding_mode='reflect')      
-        self.bn1 = nn.BatchNorm2d(output_channels)
-        self.Lrelu1 = nn.LeakyReLU(True)   
-         
-        self.conv2 = nn.Conv2d(output_channels, output_channels, kernel_size=kernel_size, stride=stride, padding=padding, padding_mode='reflect')  
-        self.bn2 = nn.BatchNorm2d(output_channels)       
-        self.Lrelu2 = nn.LeakyReLU(True)
-        # When ceil_mode=True, sliding windows are allowed to go off-bounds if they start within the left padding or the input. Sliding windows that would start in the right padded region are ignored.
-        self.mp = nn.MaxPool2d(kernel_size=pooling, stride=pooling, ceil_mode=True) 
-        
-        
-        nn.init.kaiming_uniform_(self.conv1.weight)
-        nn.init.kaiming_uniform_(self.conv2.weight)
-         
-    def forward(self, x):
-        
-        feat = self.Lrelu1(self.bn1(self.conv1(x)))
-        #feat = self.Lrelu1(self.conv1(x))
-        out = self.mp(self.Lrelu2(self.bn2(self.conv2(feat))))
-        #out = self.mp(self.Lrelu2(self.conv2(feat)))
-
-        return out, feat
-    
-class Encoder_module4AdaIN(nn.Module):
-        def __init__(self, IsVAE=False):
-            super(Encoder_module4AdaIN, self).__init__()
-            #  input sample of size  69 × 240 (x 1) - BCHW B x 1 x 69 × 240 
-            #  resized by pooling, not conv
-            self.Conv_block1 = Conv_block4AdaIN(input_channels = 1, output_channels = 32, kernel_size=3, stride=1, padding=1, pooling=2)
-            self.Conv_block2 = Conv_block4AdaIN(input_channels = 32, output_channels = 64, kernel_size=3, stride=1, padding=1, pooling=2)
-            self.Conv_block3 = Conv_block4AdaIN(input_channels = 64, output_channels = 128, kernel_size=3, stride=1, padding=1, pooling=2)
-            self.Conv_block4 = Conv_block4AdaIN(input_channels = 128, output_channels = 256, kernel_size=3, stride=1, padding=1, pooling=2)
-            self.Conv_block5 = Conv_block4AdaIN(input_channels = 256, output_channels = 256, kernel_size=3, stride=1, padding=1, pooling=2)
-            # output latent size 3 × 8 × 256  - HWC B x 256 x 3 × 8 
-            self.IsVAE = IsVAE
-            if self.IsVAE ==True:
-                self.Conv_block_std = Conv_block(input_channels = 256, output_channels = 256, kernel_size=3, stride=1, padding=1, pooling=2)
-        def forward(self, x):
-            x, feat1_1= self.Conv_block1(x)
-            x, feat2_1 = self.Conv_block2(x)
-            x, feat3_1 = self.Conv_block3(x)
-            x, feat4_1 = self.Conv_block4(x)
-            out, _ = self.Conv_block5(x)
-
-            return out, feat1_1, feat2_1, feat3_1, feat4_1
-
-
-class Convolutional_AE_AdaIN(nn.Module):
-    def __init__(self):
-        super(Convolutional_AE_AdaIN, self).__init__()
-        # input sample of size 69 × 240
-        self.Incoder_module = Encoder_module4AdaIN()
-        self.Decoder_module = Decoder_module()
-    
-    def calc_mean_std(self, feat, eps=1e-5):
-        # eps is a small value added to the variance to avoid divide-by-zero.
-        size = feat.size()
-        assert (len(size) == 4)
-        N, C = size[:2]
-        feat_var = feat.view(N, C, -1).var(dim=2) + eps
-        feat_std = feat_var.sqrt().view(N, C, 1, 1)
-        feat_mean = feat.view(N, C, -1).mean(dim=2).view(N, C, 1, 1)
-        return feat_mean, feat_std
-    
-    def AdaIN(self, content_feat, style_feat):
-        assert (content_feat.size()[:2] == style_feat.size()[:2])
-        size = content_feat.size()
-        style_mean, style_std = self.calc_mean_std(style_feat)
-        content_mean, content_std = self.calc_mean_std(content_feat)
-
-        normalized_feat = (content_feat - content_mean.expand(size)) / content_std.expand(size)
-        return normalized_feat * style_std.expand(size) + style_mean.expand(size)
-    
-    def forward(self, content ,style):
-        content_latent, _, _, _, _ = self.Incoder_module(content)
-        
-        style_latent, style_feat1_1, styles_feat2_1, style_feat3_1, style_feat4_1 = self.Incoder_module(style)
-        
-        #AdaIN operation
-        transfered_latent = self.AdaIN(content_latent, style_latent)
-        
-        out = self.Decoder_module(transfered_latent)
-        out_latent, out_feat1_1, out_feat2_1, out_feat3_1, out_feat4_1 = self.Incoder_module(out)
-        
-        return out, out_latent, transfered_latent, [out_feat1_1, out_feat2_1, out_feat3_1, out_feat4_1], [style_feat1_1, styles_feat2_1, style_feat3_1, style_feat4_1]
-    
-    
-    
-    
 class DeConv_block_upsampling(nn.Module):
     def __init__(self, input_channels, output_channels, kernel_size=3, stride=1, padding=1, size=None):
         super(DeConv_block_upsampling, self).__init__()
@@ -249,13 +117,12 @@ class DeConv_block_upsampling(nn.Module):
         #self.BN = nn.BatchNorm2d(OutChannel)
     def forward(self, x):
         x = self.up(x)
-        x = self.Lrelu1(self.bn2(self.conv1(x)))
+        x = self.Lrelu1(self.bn1(self.conv1(x)))
         #x = self.Lrelu1(self.ConvTrans1(x))
         out = self.Lrelu2(self.bn2(self.conv2(x)))
         #out = self.Lrelu2(self.ConvTrans2(x))
         return out
 
-    
 class Decoder_module_upsampling(nn.Module):
         def __init__(self):
             super(Decoder_module_upsampling, self).__init__()
@@ -284,41 +151,157 @@ class Decoder_module_upsampling(nn.Module):
             out = self.Conv_last(x) # no acivation at last
             return out
 
-class Convolutional_AE_AdaIN_Upsample(nn.Module):
-    def __init__(self):
-        super(Convolutional_AE_AdaIN_Upsample, self).__init__()
-        # input sample of size 69 × 240
-        self.Incoder_module = Encoder_module4AdaIN()
-        self.Decoder_module = Decoder_module_upsampling()
-    
-    def calc_mean_std(self, feat, eps=1e-5):
-        # eps is a small value added to the variance to avoid divide-by-zero.
-        size = feat.size()
-        assert (len(size) == 4)
-        N, C = size[:2]
-        feat_var = feat.view(N, C, -1).var(dim=2) + eps
-        feat_std = feat_var.sqrt().view(N, C, 1, 1)
-        feat_mean = feat.view(N, C, -1).mean(dim=2).view(N, C, 1, 1)
-        return feat_mean, feat_std
-    
+# Convolution Module
+class Conv_block_NoNormalization(nn.Module):
+      def __init__(self, input_channels, output_channels, kernel_size=3, stride=1, padding=1, pooling=2):
+        super(Conv_block_NoNormalization, self).__init__()
+        self.conv1 = nn.Conv2d(input_channels, output_channels, kernel_size=kernel_size, stride=stride, padding=padding)
 
-    
-    def forward(self, content ,style):
-        content_latent, _, _, _, _ = self.Incoder_module(content)
+        self.bn1 = nn.BatchNorm2d(output_channels)
+
+        self.Lrelu1 = nn.LeakyReLU(True)
         
-        style_latent, style_feat1_1, styles_feat2_1, style_feat3_1, style_feat4_1 = self.Incoder_module(style)
+        self.conv2 = nn.Conv2d(output_channels, output_channels, kernel_size=kernel_size, stride=stride, padding=padding)
         
-        #AdaIN operation
-        transfered_latent = self.AdaIN(content_latent, style_latent)
+        self.bn2 = nn.BatchNorm2d(output_channels)
         
-        out = self.Decoder_module(transfered_latent)
-        out_latent, out_feat1_1, out_feat2_1, out_feat3_1, out_feat4_1 = self.Incoder_module(out)
+        self.Lrelu2 = nn.LeakyReLU(True)
         
-        return out, out_latent, transfered_latent, [out_feat1_1, out_feat2_1, out_feat3_1, out_feat4_1], [style_feat1_1, styles_feat2_1, style_feat3_1, style_feat4_1] 
+        # When ceil_mode=True, sliding windows are allowed to go off-bounds if they start within the left padding or the input. Sliding windows that would start in the right padded region are ignored.
+        self.mp = nn.MaxPool2d(kernel_size=pooling, stride=pooling, ceil_mode=True) 
+        #self.bn = nn.BatchNorm2d(output_channels)
+        
+        nn.init.xavier_normal_(self.conv1.weight)
+        nn.init.xavier_normal_(self.conv2.weight)
+         
+      def forward(self, x):
+        
+        x = self.Lrelu1(self.bn1(self.conv1(x)))
+        out = self.mp(self.Lrelu2(self.bn2(self.conv2(x))))
+        
+        return out
     
+class Style_Encoder(nn.Module):
+        def __init__(self, IsVAE=False):
+            super(Style_Encoder, self).__init__()
+            #  input sample of size  69 × 240 (x 1) - BCHW B x 1 x 69 × 240 
+            #  resized by pooling, not conv
+            self.Conv_block1 = Conv_block_NoNormalization(input_channels = 1, output_channels = 32, kernel_size=3, stride=1, padding=1, pooling=2)
+            self.Conv_block2 = Conv_block_NoNormalization(input_channels = 32, output_channels = 64, kernel_size=3, stride=1, padding=1, pooling=2)
+            self.Conv_block3 = Conv_block_NoNormalization(input_channels = 64, output_channels = 128, kernel_size=3, stride=1, padding=1, pooling=2)
+            self.Conv_block4 = Conv_block_NoNormalization(input_channels = 128, output_channels = 256, kernel_size=3, stride=1, padding=1, pooling=2)
+            self.Conv_block5 = Conv_block_NoNormalization(input_channels = 256, output_channels = 256, kernel_size=3, stride=1, padding=1, pooling=2)
+            # output latent size 3 × 8 × 256  - HWC B x 256 x 3 × 8 
+            
+            self.Fc_mean = nn.Linear(3*8*256, 256)
+            self.Fc_std = nn.Linear(3*8*256, 256)
+
+        def forward(self, x):
+            x = self.Conv_block1(x)
+            x = self.Conv_block2(x)
+            x = self.Conv_block3(x)
+            x = self.Conv_block4(x)
+            x = self.Conv_block5(x) # 256 x 3 × 8 
+            x = x.view(x.size(0), -1)
+            mean = self.Fc_mean(x)
+            std = self.Fc_std(x)
+            return mean, std
+
+def calc_mean_std(feat, eps=1e-5):
+    # eps is a small value added to the variance to avoid divide-by-zero.
+    size = feat.size()
+    assert (len(size) == 4)
+    N, C = size[:2]
+    feat_var = feat.view(N, C, -1).var(dim=2) + eps
+    feat_std = feat_var.sqrt().view(N, C, 1, 1)
+    feat_mean = feat.view(N, C, -1).mean(dim=2).view(N, C, 1, 1)
+    return feat_mean, feat_std
+
+def AdaIN(content_feat, style_mean, style_std):
+    #assert (content_feat.size()[:2] == style_feat.size()[:2])
+    size = content_feat.size()
+    #style_mean, style_std = self.calc_mean_std(style_feat)
+    content_mean, content_std = calc_mean_std(content_feat)
+
+    normalized_feat = (content_feat - content_mean.expand(size)) / content_std.expand(size)
     
+    return normalized_feat * style_std.unsqueeze(-1).unsqueeze(-1).expand(size) + style_mean.unsqueeze(-1).unsqueeze(-1).expand(size)
+
+
+class Convolutional_unpair(nn.Module):
+    def __init__(self):
+        super(Convolutional_unpair, self).__init__()
+        # input sample of size 69 × 240
+        self.Content_Encoder_module = Encoder_module_IN()
+        self.Style_Encoder_module = Style_Encoder()
+
+        self.Decoder_module = Decoder_module_upsampling()
+
+    def forward(self, content, style):
+        content_feat = self.Content_Encoder_module(content) # 
+        style_mean, style_std = self.Style_Encoder_module(style) #mean and var
+        
+        AdaIN_latent = AdaIN(content_feat, style_mean, style_std)
+        
+        out = self.Decoder_module(AdaIN_latent)
+        return out
     
-    
+# Convolution Module
+class Conv_block(nn.Module):
+      def __init__(self, input_channels, output_channels, kernel_size=3, stride=1, padding=1, pooling=2):
+        super(Conv_block, self).__init__()
+        self.conv1 = nn.Conv2d(input_channels, output_channels, kernel_size=kernel_size, stride=stride, padding=padding)
+        
+        
+        self.bn1 = nn.BatchNorm2d(output_channels)
+
+        self.Lrelu1 = nn.LeakyReLU(True)
+        
+        self.conv2 = nn.Conv2d(output_channels, output_channels, kernel_size=kernel_size, stride=stride, padding=padding)
+        
+        self.bn2 = nn.BatchNorm2d(output_channels)
+        
+        self.Lrelu2 = nn.LeakyReLU(True)
+        
+        # When ceil_mode=True, sliding windows are allowed to go off-bounds if they start within the left padding or the input. Sliding windows that would start in the right padded region are ignored.
+        self.mp = nn.MaxPool2d(kernel_size=pooling, stride=pooling, ceil_mode=True) 
+        #self.bn = nn.BatchNorm2d(output_channels)
+        
+        nn.init.xavier_normal_(self.conv1.weight)
+        nn.init.xavier_normal_(self.conv2.weight)
+         
+      def forward(self, x):
+        
+        x = self.Lrelu1(self.bn1(self.conv1(x)))
+        out = self.mp(self.Lrelu2(self.bn2(self.conv2(x))))
+        
+        return out
+
+class Discriminator(nn.Module):
+        def __init__(self, IsVAE=False):
+            super(Discriminator, self).__init__()
+            #  input sample of size  69 × 240 (x 1) - BCHW B x 1 x 69 × 240 
+            #  resized by pooling, not conv
+            self.Conv_block1 = Conv_block(input_channels = 1, output_channels = 32, kernel_size=3, stride=1, padding=1, pooling=2)
+            self.Conv_block2 = Conv_block(input_channels = 32, output_channels = 64, kernel_size=3, stride=1, padding=1, pooling=2)
+            self.Conv_block3 = Conv_block(input_channels = 64, output_channels = 128, kernel_size=3, stride=1, padding=1, pooling=2)
+            self.Conv_block4 = Conv_block(input_channels = 128, output_channels = 256, kernel_size=3, stride=1, padding=1, pooling=2)
+            self.Conv_block5 = Conv_block(input_channels = 256, output_channels = 256, kernel_size=3, stride=1, padding=1, pooling=2)
+            # output latent size 3 × 8 × 256  - HWC B x 256 x 3 × 8 
+            
+            self.Fc1 = nn.Linear(3*8*256, 1)
+            self.sigmoid_layer = nn.Sigmoid()
+        def forward(self, x):
+            x = self.Conv_block1(x)
+            x = self.Conv_block2(x)
+            x = self.Conv_block3(x)
+            x = self.Conv_block4(x)
+            x = self.Conv_block5(x) # 3 × 8 × 256
+            x = x.view(x.size(0), -1)
+            out = self.Fc1(x)
+            return self.sigmoid_layer(out)
+
+
 if __name__ == '__main__':
         print("##Size Check")
         

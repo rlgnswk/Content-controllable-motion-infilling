@@ -52,16 +52,16 @@ class saveData():
             model.state_dict(),
             self.save_dir_model + '/model_' + str(epoch) + '.pt')
     
-    def save_result(self, pred, gt, masked_input, style_input, epoch):
+    def save_result(self, pred, gt, masked_input, epoch):
         pred = pred.detach().squeeze(1).permute(0,2,1).cpu().numpy()
         gt = gt.detach().squeeze(1).permute(0,2,1).cpu().numpy()
         masked_input = masked_input.detach().squeeze(1).permute(0,2,1).cpu().numpy()
-        style_input = style_input.detach().squeeze(1).permute(0,2,1).cpu().numpy()
+        #style_input = style_input.detach().squeeze(1).permute(0,2,1).cpu().numpy()
 
         np.save(self.save_dir_validation + '/epoch_' + str(epoch) + "_Results", pred)
         np.save(self.save_dir_validation + '/epoch_' + str(epoch) + "_GT", gt)
         np.save(self.save_dir_validation + '/epoch_' + str(epoch) + "_Masked_Input", masked_input)
-        np.save(self.save_dir_validation + '/epoch_' + str(epoch) + "_Style_Input", style_input)
+        #np.save(self.save_dir_validation + '/epoch_' + str(epoch) + "_Style_Input", style_input)
 
         cmap = plt.get_cmap('jet') 
         
@@ -90,13 +90,13 @@ class saveData():
             plt.title("masked_input", fontsize=25)
             plt.savefig(self.save_dir_validation + '/epoch_'+ str(epoch) +'_masked_input_'+str(i)+'.png')
 
-        for i in range(1): 
+        '''for i in range(1): 
             plt.figure(figsize=(2,4))
             plt.matshow(style_input[i], cmap=cmap)
             #plt.matshow(np.zeros(masked_input[i].shape), cmap=cmap)
             plt.clim(-100, 50)
             #plt.axis('off')
             plt.title("style_input", fontsize=25)
-            plt.savefig(self.save_dir_validation + '/epoch_'+ str(epoch) +'_style_input_'+str(i)+'.png')
+            plt.savefig(self.save_dir_validation + '/epoch_'+ str(epoch) +'_style_input_'+str(i)+'.png')'''
         
         plt.close('all')
