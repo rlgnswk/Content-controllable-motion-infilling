@@ -85,20 +85,33 @@ class MotionLoader(Dataset):
             orig_width = gt_image.shape[1] #240
             
             masking_length = round(np.random.normal(self.masking_length_mean, 20.0)) # std 20
+            if masking_length <= 4 : 
+                masking_length = 4
+            if masking_length >= 240 :
+                masking_length = 239  
+
+            mask_width = masking_length #+ self.noise(False) #55 ~ 65
+            
+
+            
             index = random.randint(0, orig_width - mask_width)# sampling the start point of masking 
 
-            if masking_length <= 0 : 
-                masking_length = 1
-            if masking_length >= 240 :
-                masking_length = 239            
+          
             
             ###make input for blending
             
             blended_len = masking_length // 4 
             blend_image = self.remove_foot_contacts(self.data[idx])
-            blend_zeros = np.zeros((orig_height, mask_width))
-            
+            blend_image = np.transpose(blend_image)
+            blend_zeros = np.zeros((orig_height, orig_width))
+
             blend_index = ((index + index + masking_length) // 2) - (blended_len // 2)
+            #print("blend_image ", blend_image.shape)
+            #print("blend_zeros shape ", blend_zeros.shape)
+            #print(" blend_image[: , blend_index : blend_index + blended_len].shape",  blend_image[: , blend_index : blend_index + blended_len].shape)
+            #print(" blend_zeros[: , blend_index : blend_index + blended_len].shape",  blend_zeros[: , blend_index : blend_index + blended_len].shape)
+            
+
             blend_zeros[: , blend_index : blend_index + blended_len] = blend_image[: , blend_index : blend_index + blended_len] 
 
             ###        
@@ -108,7 +121,7 @@ class MotionLoader(Dataset):
             # for maksing
             
             masked_input = gt_image.copy()
-            mask_width = masking_length #+ self.noise(False) #55 ~ 65
+            
             if self.IsTrain == True:
                 #In training step, randomly masking
                 masking = np.zeros((orig_height, mask_width))# generate zeros matrix for masking: orig_height x mask_width

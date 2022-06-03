@@ -58,7 +58,7 @@ def main(args):
     GT_model.eval()
 
     saveUtils.save_log(str(args))
-    saveUtils.save_log(str(summary(model, (1,1,69,240))))
+    saveUtils.save_log(str(summary(model, ((1,1,69,240), (1,1,69,240)))))
     
     train_dataloader, train_dataset = data_load.get_dataloader(args.datasetPath , args.batchSize, IsNoise=False, \
                                                                             IsTrain=True, dataset_mean=None, dataset_std=None)
