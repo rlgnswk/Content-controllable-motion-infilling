@@ -52,7 +52,7 @@ def main(args):
     else:
         model = models.Convolutional_blend().to(device)
     
-    pretrained_path = "/root/Motion_Style_Infilling/pertrained/0530maskDone1CurriculLearning2_model_199.pt"
+    pretrained_path = "/root/Motion_Style_Infilling/pertrained/0530maskDone1CurriculLearning_bn_model_199.pt"
     GT_model = pretrain_models.Convolutional_AE().to(device)
     GT_model.load_state_dict(torch.load(pretrained_path))
     GT_model.eval()
