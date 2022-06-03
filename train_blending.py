@@ -15,9 +15,10 @@ import os
 
 from torchinfo import summary
 
-import as models
-import utils
-import data_load
+import models as pretrain_models
+import models_blend as models
+import utils4blend as utils
+import data_load_blend as data_load
 #input sample of size 69 × 240
 #latent space 3 × 8 × 256 tensor
 
@@ -47,11 +48,14 @@ def main(args):
     
     
     if args.model_type == 'VAE':
-        model = models.Convolutional_VAE().to(device)
+        model = models.Convolutional_blend().to(device)
     else:
-        model = models.Convolutional_AE().to(device)
+        model = models.Convolutional_blend().to(device)
     
-    #GT_model = load_pretrain(args.pretrained)
+    pretrained_path = "/root/Motion_Style_Infilling/pertrained/0530maskDone1CurriculLearning2_model_199.pt"
+    GT_model = pretrain_models.Convolutional_AE().to(device)
+    GT_model.load_state_dict(torch.load(pretrained_path))
+    GT_model.eval()
 
     saveUtils.save_log(str(args))
     saveUtils.save_log(str(summary(model, (1,1,69,240))))
@@ -84,13 +88,19 @@ def main(args):
         for iter, item in enumerate(train_dataloader):
             print_num +=1
             
-            masked_input, gt_image = item
+            masked_input, gt_image, blend_part, blend_gt = item
             masked_input = masked_input.to(device, dtype=torch.float)
             gt_image = gt_image.to(device, dtype=torch.float)
+            blend_part = blend_part.to(device, dtype=torch.float)
+            blend_gt = blend_gt.to(device, dtype=torch.float)
+
+            blend_input = masked_input + blend_part
+
+            gt_blended_image= GT_model(blend_input).detach()
+
+            pred = model(masked_input, blend_gt)
             
-            pred = model(masked_input)
-            
-            train_loss = loss_function(pred, gt_image)
+            train_loss = loss_function(pred, gt_blended_image.detach())
 
             #total_loss += train_loss.item()
             #train_loss_root = loss_function(pred[:, :, -7, :], gt_image[:, :, -7, :]) + loss_function(pred[:, :, -6, :], gt_image[:, :, -6, :]) +loss_function(pred[:, :, -5, :], gt_image[:, :, -5, :])
@@ -115,14 +125,19 @@ def main(args):
         #validation per epoch ############
         for iter, item in enumerate(valid_dataloader):
             model.eval()
-            masked_input, gt_image = item
+            masked_input, gt_image, blend_part, blend_gt = item
             masked_input = masked_input.to(device, dtype=torch.float)
             gt_image = gt_image.to(device, dtype=torch.float)
+            blend_part = blend_part.to(device, dtype=torch.float)
+            blend_gt = blend_gt.to(device, dtype=torch.float)
+
+            blend_input = masked_input + blend_part
             
             with torch.no_grad():
-                pred = model(masked_input)
+                gt_blended_image= GT_model(blend_input).detach()
+                pred = model(masked_input, blend_gt)
 
-            val_loss = loss_function(pred, gt_image.detach())
+            val_loss = loss_function(pred, gt_blended_image.detach())
             #val_loss_root = loss_function(pred[:, :, -7, :], gt_image[:, :, -7, :]) + loss_function(pred[:, :, -6, :], gt_image[:, :, -6, :]) +loss_function(pred[:, :, -5, :], gt_image[:, :, -5, :])
             
             total_val_loss = val_loss #+ val_loss_root * 10
@@ -134,7 +149,7 @@ def main(args):
         #gt_image = data_load.De_normalize_data_dist(gt_image.detach().squeeze(1).permute(0,2,1).cpu().numpy(), 0.0, 1.0)
         #masked_input = data_load.De_normalize_data_dist(masked_input.detach().squeeze(1).permute(0,2,1).cpu().numpy(), 0.0, 1.0)
         
-        saveUtils.save_result(pred, gt_image, masked_input, num_epoch)
+        saveUtils.save_result(pred, gt_image, blend_gt, gt_blended_image, blend_input, num_epoch)
         valid_epoch_loss = total_v_loss/len(valid_dataloader)
         log = "Valid: [Epoch %d] [Valid Loss: %.4f]" % (num_epoch, valid_epoch_loss)
         print(log)
