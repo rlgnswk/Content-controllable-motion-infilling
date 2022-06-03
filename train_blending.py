@@ -51,6 +51,8 @@ def main(args):
     else:
         model = models.Convolutional_AE().to(device)
     
+    #GT_model = load_pretrain(args.pretrained)
+
     saveUtils.save_log(str(args))
     saveUtils.save_log(str(summary(model, (1,1,69,240))))
     
