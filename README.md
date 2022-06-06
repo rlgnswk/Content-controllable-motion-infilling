@@ -8,7 +8,8 @@ Motion_Style_Infilling(pytorch) / GCT525 Motion Graphics Term project
 
 
 기록.
-
+##blend-guided 된다!! 과연 novelty를 어떻게 주장할 수 있는가? 걍 blend보고 배운건가? 근데 encode가 있긴해
+GAN을 추가해줘야 novelty가 사려나? 
 
 
 
