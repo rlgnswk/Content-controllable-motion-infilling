@@ -105,15 +105,6 @@ class MotionLoader(Dataset):
             blend_image = np.transpose(blend_image)
             blend_zeros = np.zeros((orig_height, orig_width))
 
-            blend_index = ((index + index + masking_length) // 2) - (blended_len // 2)
-            #print("blend_image ", blend_image.shape)
-            #print("blend_zeros shape ", blend_zeros.shape)
-            #print(" blend_image[: , blend_index : blend_index + blended_len].shape",  blend_image[: , blend_index : blend_index + blended_len].shape)
-            #print(" blend_zeros[: , blend_index : blend_index + blended_len].shape",  blend_zeros[: , blend_index : blend_index + blended_len].shape)
-            
-
-            blend_zeros[: , blend_index : blend_index + blended_len] = blend_image[: , blend_index : blend_index + blended_len] 
-
             ###        
             #test denoising
             #masked_input = gt_image.copy() + np.random.randn(orig_height, orig_width) * 0.1 # deep copy
@@ -123,15 +114,23 @@ class MotionLoader(Dataset):
             masked_input = gt_image.copy()
             
             if self.IsTrain == True:
+
                 #In training step, randomly masking
                 masking = np.zeros((orig_height, mask_width))# generate zeros matrix for masking: orig_height x mask_width
                 masked_input[: , index : index+mask_width] = masking # masking
+                
+                blend_index = ((index + index + masking_length) // 2) - (blended_len // 2)
+                blend_zeros[: , blend_index : blend_index + blended_len] = blend_image[: , blend_index : blend_index + blended_len] 
             else:
+
                 #In test phase, center of the data are masked
                 masking = np.zeros((orig_height, mask_width))# generate zeros matrix for masking: orig_height x mask_width
                 #index = random.randint(0, orig_width - mask_width)# sampling the start point of masking 
                 index = 120 - mask_width // 2
                 masked_input[: , index : index+mask_width] = masking # masking
+                
+                blend_index = ((index + index + masking_length) // 2) - (blended_len // 2)
+                blend_zeros[: , blend_index : blend_index + blended_len] = blend_image[: , blend_index : blend_index + blended_len] 
             
             #print(np.sum(masked_input) == np.sum(gt_image))
             #return maksed_input and gt CHW #(69, 240) --> (1, 69, 240)
