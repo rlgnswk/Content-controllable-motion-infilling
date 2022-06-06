@@ -91,17 +91,13 @@ class MotionLoader(Dataset):
                 masking_length = 239  
 
             mask_width = masking_length #+ self.noise(False) #55 ~ 65
-            
-
-            
+             
             index = random.randint(0, orig_width - mask_width)# sampling the start point of masking 
 
-          
-            
             ###make input for blending
-            
+            data_select = random.randint(0, len(self.data)-1)
             blended_len = masking_length // 4 
-            blend_image = self.remove_foot_contacts(self.data[idx])
+            blend_image = self.remove_foot_contacts(self.data[data_select])
             blend_image = np.transpose(blend_image)
             blend_zeros = np.zeros((orig_height, orig_width))
 

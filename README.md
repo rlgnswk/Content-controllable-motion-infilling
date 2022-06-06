@@ -36,7 +36,7 @@ recon weight넣어서 줄이니까 움직이지도 않음.
 
 디노이징(빈칸 x , 노이즈만 첨가)은 VAE, AE 모두 잘 됨
 
-GANbased는 일단 학습이 안됨 그냥 서있음.
+GANbased는 일단 학습이 안됨 그냥 서있음->>오래 학습한 결과 그냥 reconsturction label 없이 B를 real로 넣어준거로는 스타일 전이가 되지 않음.
 
 selfRef_sameWeights 뭔가 망가지진 않는데, 뭘 보고 배우는지 모르겠음 하나의 인풋 하나의 스타일로 매칭되는 결과는 아님.
 
