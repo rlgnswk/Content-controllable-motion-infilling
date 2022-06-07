@@ -14,9 +14,11 @@ import random
 import os
 
 from torchinfo import summary
+from torch.autograd import Variable
 
 import models as pretrain_models
 import models_blend as models
+import models_unpair as Discriminator_model
 import utils4blend as utils
 import data_load_blend as data_load
 #input sample of size 69 × 240
@@ -57,23 +59,39 @@ def main(args):
     GT_model.load_state_dict(torch.load(pretrained_path))
     GT_model.eval()
 
+    NetD = Discriminator_model.Discriminator().to(device)
+
     saveUtils.save_log(str(args))
     saveUtils.save_log(str(summary(model, ((1,1,69,240), (1,1,69,240)))))
-    
+    saveUtils.save_log(str(summary(NetD, (1,1,69,240))))
+
     train_dataloader, train_dataset = data_load.get_dataloader(args.datasetPath , args.batchSize, IsNoise=False, \
                                                                             IsTrain=True, dataset_mean=None, dataset_std=None)
     valid_dataloader, valid_dataset = data_load.get_dataloader(args.ValdatasetPath , args.batchSize, IsNoise=False, \
                                                                             IsTrain=False, dataset_mean=None, dataset_std=None)
     
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    optimizer_D = torch.optim.Adam(NetD.parameters(), lr=args.lr)
     loss_function = nn.L1Loss()
-    
+    criterion_D = nn.BCELoss()
+    criterion_G = nn.BCELoss()
+
     print_interval = 100
     print_num = 0
     for num_epoch in range(args.numEpoch):
         
         total_loss = 0
+
+        total_recon_loss = 0
+        total_G_loss = 0
+        total_D_loss = 0
+
+
         total_v_loss = 0
+
+        total_v_recon_loss = 0
+        total_v_G_loss = 0
+        total_v_D_loss = 0
         
         if train_dataset.masking_length_mean < 120 and num_epoch is not 0 and num_epoch%10 == 0:
             train_dataset.masking_length_mean = train_dataset.masking_length_mean + 10
@@ -100,31 +118,66 @@ def main(args):
 
             pred = model(masked_input, blend_gt)
             
-            train_loss = loss_function(pred, gt_blended_image.detach())
+            #NetD training
+            for p in NetD.parameters():
+                p.requires_grad = True
+            NetD.zero_grad()
 
-            #total_loss += train_loss.item()
-            #train_loss_root = loss_function(pred[:, :, -7, :], gt_image[:, :, -7, :]) + loss_function(pred[:, :, -6, :], gt_image[:, :, -6, :]) +loss_function(pred[:, :, -5, :], gt_image[:, :, -5, :])
+            real = NetD(gt_image)
+            true_labels = Variable(torch.ones_like(real))
+            loss_D_real = criterion_D(real, true_labels.detach())
             
             
-            total_train_loss = train_loss #+ train_loss_root * 10
-            total_loss += total_train_loss.item()
+            fake = NetD(pred.detach())
+            fake_labels = Variable(torch.zeros_like(fake))
+            loss_D_fake = criterion_D(fake, fake_labels.detach())            
             
+            total_loss_D = loss_D_fake + loss_D_real
+            
+            total_loss_D.backward()
+            optimizer_D.step()            
+            
+            #Generator training
+            for p in NetD.parameters():
+                p.requires_grad = False
+            NetD.zero_grad()
+
+            recon_loss = loss_function(pred, gt_blended_image.detach())
+            loss_G = criterion_G(NetD(pred), true_labels.detach())
+                
+            total_train_loss = recon_loss + loss_G
             optimizer.zero_grad()
             total_train_loss.backward()
-            #train_loss.backward()
             optimizer.step()
+            
+            total_loss += total_train_loss.item()
+            total_recon_loss += recon_loss.item()
+            total_G_loss += loss_G.item()
+            total_D_loss += total_loss_D.item()
             
             if iter % print_interval == 0 and iter != 0:
                 train_iter_loss =  total_loss*0.01
-                log = "Train: [Epoch %d][Iter %d] [Train Loss: %.4f]" % (num_epoch, iter, train_iter_loss)
+                train_recon_iter_loss =  total_recon_loss * 0.01
+                train_G_iter_loss = total_G_loss * 0.01
+                train_D_iter_loss = total_D_loss * 0.01
+                log = "Train: [Epoch %d][Iter %d] [total_train_iter_loss(G): %.4f] [train_D_iter_loss: %.4f] [recon loss: %.4f] [G loss: %.4f] " %\
+                                             (num_epoch, iter, train_iter_loss, train_D_iter_loss, train_recon_iter_loss, train_G_iter_loss)
                 print(log)
                 saveUtils.save_log(log)
-                writer.add_scalar("Train Loss/ iter", train_iter_loss, print_num)
+                writer.add_scalar("Train Loss(G)/ iter", train_iter_loss, print_num)
+                writer.add_scalar("total_G_iter_loss/ iter", train_G_iter_loss, print_num)
+                writer.add_scalar("train_D_iter_loss/ iter", train_D_iter_loss, print_num)
+                writer.add_scalar("total_recon_loss/ iter", train_recon_iter_loss, print_num)
                 total_loss = 0
-                
+                total_recon_loss = 0
+                total_G_loss = 0
+                total_D_loss = 0
+
         #validation per epoch ############
         for iter, item in enumerate(valid_dataloader):
             model.eval()
+            NetD.eval()
+
             masked_input, gt_image, blend_part, blend_gt = item
             masked_input = masked_input.to(device, dtype=torch.float)
             gt_image = gt_image.to(device, dtype=torch.float)
@@ -136,12 +189,19 @@ def main(args):
             with torch.no_grad():
                 gt_blended_image= GT_model(blend_input).detach()
                 pred = model(masked_input, blend_gt)
+                real = NetD(gt_image)
+                fake = NetD(pred)
 
-            val_loss = loss_function(pred, gt_blended_image.detach())
-            #val_loss_root = loss_function(pred[:, :, -7, :], gt_image[:, :, -7, :]) + loss_function(pred[:, :, -6, :], gt_image[:, :, -6, :]) +loss_function(pred[:, :, -5, :], gt_image[:, :, -5, :])
+            loss_D_real = criterion_D(real, true_labels.detach())
+            loss_D_fake = criterion_D(fake, fake_labels.detach())  
+            recon_loss = loss_function(pred, gt_blended_image.detach())
+            loss_G = criterion_G(NetD(pred), true_labels.detach())
+
             
-            total_val_loss = val_loss #+ val_loss_root * 10
-            total_v_loss += total_val_loss.item()
+            total_v_loss = (recon_loss + loss_G).item()
+            total_v_recon_loss = recon_loss.item()
+            total_v_G_loss = loss_G.item()
+            total_v_D_loss = loss_D_real.item() + loss_D_fake.item()
             
             model.train()
             
@@ -151,13 +211,20 @@ def main(args):
         
         saveUtils.save_result(pred, gt_image, blend_gt, gt_blended_image, blend_input, masked_input, num_epoch)
         valid_epoch_loss = total_v_loss/len(valid_dataloader)
-        log = "Valid: [Epoch %d] [Valid Loss: %.4f]" % (num_epoch, valid_epoch_loss)
+        valid_epoch_recon_loss = total_v_recon_loss/len(valid_dataloader)
+        valid_epoch_G_loss = total_v_G_loss/len(valid_dataloader)
+        valid_epoch_D_loss = total_v_D_loss/len(valid_dataloader)
+
+        log = "Valid: [Epoch %d] [valid_epoch_loss(G): %.4f] [valid_epoch_D_loss: %.4f] [valid_epoch_recon_loss: %.4f] [valid_epoch_G_loss: %.4f]" %\
+                                             (num_epoch, valid_epoch_loss, valid_epoch_D_loss, valid_epoch_recon_loss, valid_epoch_G_loss)
         print(log)
         saveUtils.save_log(log)
-        writer.add_scalar("Valid Loss/ Epoch", valid_epoch_loss, num_epoch)    
+        writer.add_scalar("valid_epoch_loss/ Epoch", valid_epoch_loss, num_epoch)
+        writer.add_scalar("valid_epoch_recon_loss/ Epoch", valid_epoch_recon_loss, num_epoch) 
+        writer.add_scalar("valid_epoch_G_loss/ Epoch", valid_epoch_G_loss, num_epoch) 
+        writer.add_scalar("valid_epoch_D_loss/ Epoch", valid_epoch_D_loss, num_epoch)   
         saveUtils.save_model(model, num_epoch) # save model per epoch
         #validation per epoch ############
-        
         
         
 if __name__ == "__main__":
