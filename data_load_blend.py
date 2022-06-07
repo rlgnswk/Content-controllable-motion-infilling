@@ -100,7 +100,7 @@ class MotionLoader(Dataset):
             blend_image = self.remove_foot_contacts(self.data[data_select])
             blend_image = np.transpose(blend_image)
             blend_zeros = np.zeros((orig_height, orig_width))
-
+            blend_cut_index = random.randint(0, orig_width - blended_len) # cutting start point 
             ###        
             #test denoising
             #masked_input = gt_image.copy() + np.random.randn(orig_height, orig_width) * 0.1 # deep copy
@@ -116,7 +116,7 @@ class MotionLoader(Dataset):
                 masked_input[: , index : index+mask_width] = masking # masking
                 
                 blend_index = ((index + index + masking_length) // 2) - (blended_len // 2)
-                blend_zeros[: , blend_index : blend_index + blended_len] = blend_image[: , blend_index : blend_index + blended_len] 
+                blend_zeros[: , blend_index : blend_index + blended_len] = blend_image[: , blend_cut_index : blend_cut_index + blended_len] 
             else:
 
                 #In test phase, center of the data are masked
@@ -125,8 +125,9 @@ class MotionLoader(Dataset):
                 index = 120 - mask_width // 2
                 masked_input[: , index : index+mask_width] = masking # masking
                 
+                
                 blend_index = ((index + index + masking_length) // 2) - (blended_len // 2)
-                blend_zeros[: , blend_index : blend_index + blended_len] = blend_image[: , blend_index : blend_index + blended_len] 
+                blend_zeros[: , blend_index : blend_index + blended_len] = blend_image[: , blend_cut_index : blend_cut_index + blended_len] 
             
             #print(np.sum(masked_input) == np.sum(gt_image))
             #return maksed_input and gt CHW #(69, 240) --> (1, 69, 240)

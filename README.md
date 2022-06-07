@@ -12,6 +12,7 @@ Motion_Style_Infilling(pytorch) / GCT525 Motion Graphics Term project
 GAN을 추가해줘야 novelty가 사려나? 
 
 
+그리고 가운데 들어가는 프레임이 꼭 같은 위치일 필요 없다! -.>> random하게 주니까 style clip 포즈의 mean 으로 애매하게 되는 느낌도 있는거 같음.
 
 
 Batch norm을 넣어서 학습이 안정되었다. 이전에 특정 시점에서 갑자기 값이 튀는 문제 발생.
