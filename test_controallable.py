@@ -59,6 +59,11 @@ def main(args):
     GT_model.load_state_dict(torch.load(pretrained_path))
     GT_model.eval()
 
+
+    pretrained_modelpath = "/root/Motion_Style_Infilling/experiment/controllableFirst0609/model/model_310.pt"
+    model.load_state_dict(torch.load(pretrained_modelpath))
+    model.eval()
+
     NetD = Discriminator_model.Discriminator().to(device)
 
     saveUtils.save_log(str(args))
@@ -93,9 +98,9 @@ def main(args):
                 gt_blended_image= GT_model(blend_input)
                 pred_affine, pred_recon = model(masked_input, blend_gt)
                 saveUtils.save_result(pred_affine, gt_image, blend_gt, gt_blended_image, blend_input, masked_input, iter)
-                for alpha in [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
-                    output = model.test(masked_input, blend_gt, alpha)
-                    saveUtils.save_result_test_output(output, iter, alpha)
+                for alpha in [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]:
+                    output = model.test2(masked_input, gt_image, blend_gt, alpha)
+                    saveUtils.save_result_test(output, iter, alpha)
             
         
 if __name__ == "__main__":
