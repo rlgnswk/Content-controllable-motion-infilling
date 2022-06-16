@@ -1,5 +1,5 @@
-# Motion_Style_Infilling-pytorch-
-Motion_Style_Infilling(pytorch) / GCT525 Motion Graphics Term project
+# Convolutional Autoencoders for Human Motion Infilling(pytorch, unofficial)
+Project: Content controllable motion infilling(pytorch) / GCT525 Motion Graphics Term project
 
 
 
