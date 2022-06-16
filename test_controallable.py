@@ -60,7 +60,8 @@ def main(args):
     GT_model.eval()
 
 
-    pretrained_modelpath = "/root/Motion_Style_Infilling/experiment/controllableFirst0609/model/model_310.pt"
+    #pretrained_modelpath = "/root/Motion_Style_Infilling/experiment/controllableFirst0609/model/model_300.pt"
+    pretrained_modelpath ="/personal/GiHoonKim/motionInfilling/controllableFirst0615_netD_intput_blendgt/model/model_399.pt"
     model.load_state_dict(torch.load(pretrained_modelpath))
     model.eval()
 
