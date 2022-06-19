@@ -97,7 +97,7 @@ def add_foot_contacts(data): # chaneel 73 -> 69, 69 is baseline
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--name', type=str) # experiment name 
-parser.add_argument('--epoch', type=int, default=199, help='input batch size for training') #epoch num
+parser.add_argument('--epoch', type=int, default=0, help='input batch size for training') #epoch num
 args = parser.parse_args()
 
 
