@@ -97,7 +97,7 @@ def add_foot_contacts(data): # chaneel 73 -> 69, 69 is baseline
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--name', type=str) # experiment name 
-parser.add_argument('--epoch', type=int, default=0, help='input batch size for training') #epoch num
+parser.add_argument('--epoch', type=int, default=199, help='input batch size for training') #epoch num
 args = parser.parse_args()
 
 
@@ -116,26 +116,51 @@ if __name__ == '__main__':
     #db_Input = 'epoch_'+str(epoch)+'_Results.npy'
 
     #blend
-    db_GT = 'epoch_'+str(epoch)+'_gt_image.npy'
-    db_Input = 'epoch_'+str(epoch)+'_Masked_input.npy'
-    db_Results = 'epoch_'+str(epoch)+'_pred.npy'
-    db_GT2 = 'epoch_'+str(epoch)+'_gt_blend.npy'
+    db_GT = 'epoch_0_gt_image.npy'
+    db_GT_tail = 'epoch_0_tail_input.npy'
+    
+    db_ResultAp0 = 'epoch_0_alpha_0.0_output.npy'
+    
+    db_ResultAp4 = 'epoch_0_alpha_0.4_output.npy'
+    
+    db_ResultAp6 = 'epoch_0_alpha_0.8_output.npy' 
+    
+    db_ResultAp10 = 'epoch_0_alpha_1.0_output.npy' 
+    
+    db_Blend_GT = 'epoch_0_gt_blend.npy'
+    
+    
     database_GT= np.load(os.path.join(data_path, db_GT))
     #print(database.shape)
     database_GT = add_foot_contacts(database_GT)
 
-    database_GT2= np.load(os.path.join(data_path, db_GT2))
+
+    database_GT_tail= np.load(os.path.join(data_path, db_GT_tail))
     #print(database.shape)
-    database_GT2 = add_foot_contacts(database_GT2)
+    database_GT_tail = add_foot_contacts(database_GT_tail)
+
+    database_ResultAp0= np.load(os.path.join(data_path, db_ResultAp0))
+    #print(database.shape)
+    database_ResultAp0 = add_foot_contacts(database_ResultAp0)
+
+    database_ResultAp4= np.load(os.path.join(data_path, db_ResultAp4))
+    #print(database.shape)
+    database_ResultAp4 = add_foot_contacts(database_ResultAp4)
+    
+    database_ResultAp6= np.load(os.path.join(data_path, db_ResultAp6))
+    #print(database.shape)
+    database_ResultAp6 = add_foot_contacts(database_ResultAp6)
+
+    database_ResultAp10= np.load(os.path.join(data_path, db_ResultAp10))
+    #print(database.shape)
+    database_ResultAp10 = add_foot_contacts(database_ResultAp10)
+
+    database_GT_blend= np.load(os.path.join(data_path, db_Blend_GT))
+    #print(database.shape)
+    database_GT_blend = add_foot_contacts(database_GT_blend)
 
     
-    database_Results= np.load(os.path.join(data_path, db_Results))
-    #print(database.shape)
-    database_Results = add_foot_contacts(database_Results)
-    
-    database_Input= np.load(os.path.join(data_path, db_Input))
-    #print(database.shape)
-    database_Input = add_foot_contacts(database_Input)
+
     
     for i in range(20):
         index0 = np.random.randint(0, len(database_GT))
@@ -144,10 +169,12 @@ if __name__ == '__main__':
         #print("database[index0:index0 + 1]: ",database[index0:index0 + 1].shape)
         animation_plot([
             database_GT[index0:index0 + 1],
-            database_Input[index0:index0 + 1],
-            
-            database_Results[index0:index0 + 1],
-            database_GT2[index0:index0 + 1]
+            database_GT_tail[index0:index0 + 1],
+            database_ResultAp0[index0:index0 + 1],
+            database_ResultAp4[index0:index0 + 1],
+            database_ResultAp6[index0:index0 + 1],
+            database_ResultAp10[index0:index0 + 1],
+            database_GT_blend[index0:index0 + 1],
         ])
         
         
