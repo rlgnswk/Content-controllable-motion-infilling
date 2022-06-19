@@ -191,19 +191,27 @@ class Convolutional_blend(nn.Module):
         self.Style_Encoder_module = Style_Encoder()
 
         self.Decoder_module = Decoder_module_upsampling()
-
+        self.blend_mean = 0.0
+        self.blend_std = 0.0
     def forward(self, masked_input, blend_gt):
         mask_feat = self.Content_Encoder_module(masked_input) # 
         
         blend_mean, blend_std = self.Style_Encoder_module(blend_gt) #mean and var
-        
+        self.blend_mean = blend_mean
+        self.blend_std = blend_std        
         AdaIN_latent = AdaIN(mask_feat, blend_mean, blend_std)
         
         out_affine = self.Decoder_module(AdaIN_latent)
 
         out_recon = self.Decoder_module(mask_feat)        
         return out_affine, out_recon
+
+
+    def forward_content_encoder(self, blend_gt):
+
+        blend_mean, blend_std = self.Style_Encoder_module(blend_gt) #mean and var
     
+        return blend_mean, blend_std
 
     def test(self, masked_input, blend_gt, alpha):
         # make scalable output with a = [0.0, 0.1, ..., 1.0]
@@ -241,7 +249,18 @@ class Convolutional_blend(nn.Module):
 
         return out_test
 
+    def test3(self, masked_input, mask_gt, blend_gt, alpha, blend_mean, blend_std):
+        # fixed mean and std for checking separation recon and content space 
 
+        mask_feat = self.Content_Encoder_module(masked_input) # 
+        
+        AdaIN_latent_blend = AdaIN(mask_feat, blend_mean, blend_std)
+
+        #target_latent =  (1-alpha) * AdaIN_latent_gt + alpha * AdaIN_latent_blend
+
+        out_test = self.Decoder_module(AdaIN_latent_blend)  
+
+        return out_test
 
 if __name__ == '__main__':
         print("##Size Check")
