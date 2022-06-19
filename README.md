@@ -1,9 +1,12 @@
-# Convolutional Autoencoders for Human Motion Infilling(pytorch, unofficial)
+#Content controllable motion infilling 
+
+Sub title: 
+Convolutional Autoencoders for Human Motion Infilling(pytorch, unofficial)
 Project: Content controllable motion infilling(pytorch) / GCT525 Motion Graphics Term project
 
 
 
-
+Content controllable motion infilling
 
 
 
