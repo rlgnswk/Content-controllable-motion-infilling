@@ -100,7 +100,6 @@ def main(args):
                 
                 blend_mean, blend_std = model.forward_content_encoder(blend_gt)
                 
-                
                 output = model.test3(masked_input, gt_image, blend_gt, alpha, blend_mean[0], blend_std[0])
                 saveUtils.save_result_test(output, iter, alpha)
             
