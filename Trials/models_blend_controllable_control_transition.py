@@ -83,7 +83,7 @@ class Decoder_module_upsampling(nn.Module):
         def __init__(self):
             super(Decoder_module_upsampling, self).__init__()
             # input latent size 3 × 8 × 256  - HWC
-            self.DeConv_block1 = DeConv_block_upsampling(input_channels = 256, output_channels = 256, kernel_size=3, stride=1, padding=1, size=(5,15))
+            self.DeConv_block1 = DeConv_block_upsampling(input_channels = 257, output_channels = 256, kernel_size=3, stride=1, padding=1, size=(5,15))
             self.DeConv_block2 = DeConv_block_upsampling(input_channels = 256, output_channels = 256, kernel_size=3, stride=1, padding=1, size=(9,30))
             self.DeConv_block3 = DeConv_block_upsampling(input_channels = 256, output_channels = 128, kernel_size=3, stride=1, padding=1, size=(18, 60))
             self.DeConv_block4 = DeConv_block_upsampling(input_channels = 128, output_channels = 64, kernel_size=3, stride=1, padding=1, size=(35, 120))
@@ -191,17 +191,20 @@ class Convolutional_blend(nn.Module):
         self.Style_Encoder_module = Style_Encoder()
 
         self.Decoder_module = Decoder_module_upsampling()
-        self.blend_mean = 0.0
-        self.blend_std = 0.0
-    def forward(self, masked_input, blend_gt):
+
+
+    def forward(self, masked_input, blend_gt, transition_point):
         mask_feat = self.Content_Encoder_module(masked_input) # 
         
         blend_mean, blend_std = self.Style_Encoder_module(blend_gt) #mean and var
-        self.blend_mean = blend_mean
-        self.blend_std = blend_std        
+        #Batch x 256 x 3 × 8 
         AdaIN_latent = AdaIN(mask_feat, blend_mean, blend_std)
-        
-        out_affine = self.Decoder_module(AdaIN_latent)
+
+        #Batch x 257 x 3 × 8 
+        temp = torch.zeros(80,1,3,8).cuda()
+        temp[:,0,0,0] = transition_point
+
+        out_affine = self.Decoder_module(torch.cat((AdaIN_latent, transition_point),1))
 
         out_recon = self.Decoder_module(mask_feat)        
         return out_affine, out_recon
@@ -261,63 +264,6 @@ class Convolutional_blend(nn.Module):
         out_test = self.Decoder_module(AdaIN_latent_blend)  
 
         return out_test
-
-# Convolution Module
-class Conv_block(nn.Module):
-      def __init__(self, input_channels, output_channels, kernel_size=3, stride=1, padding=1, pooling=2):
-        super(Conv_block, self).__init__()
-        self.conv1 = nn.Conv2d(input_channels, output_channels, kernel_size=kernel_size, stride=stride, padding=padding)
-        
-        
-        self.bn1 = nn.BatchNorm2d(output_channels)
-
-        self.Lrelu1 = nn.LeakyReLU(True)
-        
-        self.conv2 = nn.Conv2d(output_channels, output_channels, kernel_size=kernel_size, stride=stride, padding=padding)
-        
-        self.bn2 = nn.BatchNorm2d(output_channels)
-        
-        self.Lrelu2 = nn.LeakyReLU(True)
-        
-        # When ceil_mode=True, sliding windows are allowed to go off-bounds if they start within the left padding or the input. Sliding windows that would start in the right padded region are ignored.
-        self.mp = nn.MaxPool2d(kernel_size=pooling, stride=pooling, ceil_mode=True) 
-        #self.bn = nn.BatchNorm2d(output_channels)
-        
-        nn.init.xavier_normal_(self.conv1.weight)
-        nn.init.xavier_normal_(self.conv2.weight)
-         
-      def forward(self, x):
-        
-        x = self.Lrelu1(self.bn1(self.conv1(x)))
-        out = self.mp(self.Lrelu2(self.bn2(self.conv2(x))))
-        
-        return out
-    
-class Discriminator(nn.Module):
-        def __init__(self, IsVAE=False):
-            super(Discriminator, self).__init__()
-            #  input sample of size  69 × 240 (x 1) - BCHW B x 1 x 69 × 240 
-            #  resized by pooling, not conv
-            self.Conv_block1 = Conv_block(input_channels = 1, output_channels = 32, kernel_size=3, stride=1, padding=1, pooling=2)
-            self.Conv_block2 = Conv_block(input_channels = 32, output_channels = 64, kernel_size=3, stride=1, padding=1, pooling=2)
-            self.Conv_block3 = Conv_block(input_channels = 64, output_channels = 128, kernel_size=3, stride=1, padding=1, pooling=2)
-            self.Conv_block4 = Conv_block(input_channels = 128, output_channels = 256, kernel_size=3, stride=1, padding=1, pooling=2)
-            self.Conv_block5 = Conv_block(input_channels = 256, output_channels = 256, kernel_size=3, stride=1, padding=1, pooling=2)
-            # output latent size 3 × 8 × 256  - HWC B x 256 x 3 × 8 
-            
-            self.Fc1 = nn.Linear(3*8*256, 1)
-            self.sigmoid_layer = nn.Sigmoid()
-        def forward(self, x):
-            x = self.Conv_block1(x)
-            x = self.Conv_block2(x)
-            x = self.Conv_block3(x)
-            x = self.Conv_block4(x)
-            x = self.Conv_block5(x) # 3 × 8 × 256
-            x = x.view(x.size(0), -1)
-            out = self.Fc1(x)
-            return self.sigmoid_layer(out)
-    
-    
 
 if __name__ == '__main__':
         print("##Size Check")

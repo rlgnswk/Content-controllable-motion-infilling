@@ -17,10 +17,10 @@ from torchinfo import summary
 from torch.autograd import Variable
 
 import models as pretrain_models
-import models_blend_controllable as models
-
-import utils4blend as utils
-import data_load_blend as data_load
+import models_blend_controllable_control_transition as models
+import models_unpair as Discriminator_model
+import utils4blend_controlTrans as utils
+import data_load_blend_control_transition as data_load
 #input sample of size 69 × 240
 #latent space 3 × 8 × 256 tensor
 
@@ -59,11 +59,11 @@ def main(args):
     GT_model.load_state_dict(torch.load(pretrained_path))
     GT_model.eval()
 
-    NetD = models.Discriminator().to(device)
+    NetD = Discriminator_model.Discriminator().to(device)
 
-    saveUtils.save_log(str(args))
-    saveUtils.save_log(str(summary(model, ((1,1,69,240), (1,1,69,240)))))
-    saveUtils.save_log(str(summary(NetD, (1,1,69,240))))
+    #saveUtils.save_log(str(args))
+    #saveUtils.save_log(str(summary(model, ((1,1,69,240), (1,1,69,240)))))
+    #saveUtils.save_log(str(summary(NetD, (1,1,69,240))))
 
     train_dataloader, train_dataset = data_load.get_dataloader(args.datasetPath , args.batchSize, IsNoise=False, \
                                                                             IsTrain=True, dataset_mean=None, dataset_std=None)
@@ -86,7 +86,6 @@ def main(args):
         total_G_loss = 0
         total_D_loss = 0
 
-
         total_v_loss = 0
 
         total_v_recon_loss = 0
@@ -106,17 +105,18 @@ def main(args):
         for iter, item in enumerate(train_dataloader):
             print_num +=1
             
-            masked_input, gt_image, blend_part, blend_gt = item
+            masked_input, gt_image, blend_part, blend_gt, transition_point = item
             masked_input = masked_input.to(device, dtype=torch.float)
             gt_image = gt_image.to(device, dtype=torch.float)
             blend_part = blend_part.to(device, dtype=torch.float)
             blend_gt = blend_gt.to(device, dtype=torch.float)
+            transition_point = transition_point.to(device, dtype=torch.float)
 
             blend_input = masked_input + blend_part
 
             gt_blended_image= GT_model(blend_input).detach()
 
-            pred_affine, pred_recon = model(masked_input, blend_gt)
+            pred_affine, pred_recon = model(masked_input, blend_part, transition_point)
             
             #NetD training
             for p in NetD.parameters():
@@ -180,17 +180,19 @@ def main(args):
             model.eval()
             NetD.eval()
 
-            masked_input, gt_image, blend_part, blend_gt = item
+            masked_input, gt_image, blend_part, blend_gt, transition_point = item
             masked_input = masked_input.to(device, dtype=torch.float)
             gt_image = gt_image.to(device, dtype=torch.float)
             blend_part = blend_part.to(device, dtype=torch.float)
             blend_gt = blend_gt.to(device, dtype=torch.float)
-
+            transition_point = transition_point.to(device, dtype=torch.float)
+            
             blend_input = masked_input + blend_part
             
+            rand_trans = random.randint(0,11) * 0.1
             with torch.no_grad():
                 gt_blended_image= GT_model(blend_input).detach()
-                pred_affine, pred_recon = model(masked_input, blend_gt)
+                pred_affine, pred_recon = model(masked_input, blend_part, rand_trans.cuda())
                 real = NetD(gt_image)
                 fake = NetD(pred_affine)
 
@@ -211,7 +213,7 @@ def main(args):
         #gt_image = data_load.De_normalize_data_dist(gt_image.detach().squeeze(1).permute(0,2,1).cpu().numpy(), 0.0, 1.0)
         #masked_input = data_load.De_normalize_data_dist(masked_input.detach().squeeze(1).permute(0,2,1).cpu().numpy(), 0.0, 1.0)
         
-        saveUtils.save_result(pred_affine, gt_image, blend_gt, gt_blended_image, blend_input, masked_input, num_epoch)
+        saveUtils.save_result(pred_affine, gt_image, blend_gt, gt_blended_image, blend_input, masked_input, num_epoch, str(rand_trans))
         valid_epoch_loss = total_v_loss/len(valid_dataloader)
         valid_epoch_recon_loss = total_v_recon_loss/len(valid_dataloader)
         valid_epoch_G_loss = total_v_G_loss/len(valid_dataloader)

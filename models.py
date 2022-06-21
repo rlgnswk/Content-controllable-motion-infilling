@@ -316,7 +316,31 @@ class Convolutional_AE_AdaIN_Upsample(nn.Module):
         
         return out, out_latent, transfered_latent, [out_feat1_1, out_feat2_1, out_feat3_1, out_feat4_1], [style_feat1_1, styles_feat2_1, style_feat3_1, style_feat4_1] 
     
-    
+
+
+class Discriminator(nn.Module):
+        def __init__(self, IsVAE=False):
+            super(Discriminator, self).__init__()
+            #  input sample of size  69 × 240 (x 1) - BCHW B x 1 x 69 × 240 
+            #  resized by pooling, not conv
+            self.Conv_block1 = Conv_block(input_channels = 1, output_channels = 32, kernel_size=3, stride=1, padding=1, pooling=2)
+            self.Conv_block2 = Conv_block(input_channels = 32, output_channels = 64, kernel_size=3, stride=1, padding=1, pooling=2)
+            self.Conv_block3 = Conv_block(input_channels = 64, output_channels = 128, kernel_size=3, stride=1, padding=1, pooling=2)
+            self.Conv_block4 = Conv_block(input_channels = 128, output_channels = 256, kernel_size=3, stride=1, padding=1, pooling=2)
+            self.Conv_block5 = Conv_block(input_channels = 256, output_channels = 256, kernel_size=3, stride=1, padding=1, pooling=2)
+            # output latent size 3 × 8 × 256  - HWC B x 256 x 3 × 8 
+            
+            self.Fc1 = nn.Linear(3*8*256, 1)
+            self.sigmoid_layer = nn.Sigmoid()
+        def forward(self, x):
+            x = self.Conv_block1(x)
+            x = self.Conv_block2(x)
+            x = self.Conv_block3(x)
+            x = self.Conv_block4(x)
+            x = self.Conv_block5(x) # 3 × 8 × 256
+            x = x.view(x.size(0), -1)
+            out = self.Fc1(x)
+            return self.sigmoid_layer(out)
     
     
 if __name__ == '__main__':

@@ -18,9 +18,9 @@ from torch.autograd import Variable
 
 import models as pretrain_models
 import models_blend_controllable as models
-
+import models_unpair as Discriminator_model
 import utils4blend as utils
-import data_load_blend as data_load
+import data_load_blend_1frame as data_load
 #input sample of size 69 × 240
 #latent space 3 × 8 × 256 tensor
 
@@ -59,7 +59,7 @@ def main(args):
     GT_model.load_state_dict(torch.load(pretrained_path))
     GT_model.eval()
 
-    NetD = models.Discriminator().to(device)
+    NetD = Discriminator_model.Discriminator().to(device)
 
     saveUtils.save_log(str(args))
     saveUtils.save_log(str(summary(model, ((1,1,69,240), (1,1,69,240)))))
@@ -116,7 +116,7 @@ def main(args):
 
             gt_blended_image= GT_model(blend_input).detach()
 
-            pred_affine, pred_recon = model(masked_input, blend_gt)
+            pred_affine, pred_recon = model(masked_input, blend_part)
             
             #NetD training
             for p in NetD.parameters():
@@ -190,7 +190,7 @@ def main(args):
             
             with torch.no_grad():
                 gt_blended_image= GT_model(blend_input).detach()
-                pred_affine, pred_recon = model(masked_input, blend_gt)
+                pred_affine, pred_recon = model(masked_input, blend_part)
                 real = NetD(gt_image)
                 fake = NetD(pred_affine)
 

@@ -28,15 +28,14 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--name', type=str)
 parser.add_argument('--model_type', type=str, default='AE') 
-parser.add_argument('--datasetPath', type=str, default='/input/MotionInfillingData/train_data')
 parser.add_argument('--ValdatasetPath', type=str, default='/input/MotionInfillingData/valid_data')
 parser.add_argument('--saveDir', type=str, default='./experiment')
 parser.add_argument('--gpu', type=str, default='0', help='gpu')
-parser.add_argument('--numEpoch', type=int, default=200, help='input batch size for training')
-parser.add_argument('--batchSize', type=int, default=80, help='input batch size for training')
-parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
-args = parser.parse_args()
+#parser.add_argument('--gt_pretrained_path', type=str, default="pertrained/0530maskDone1CurriculLearning_bn_model_199.pt")
+parser.add_argument('--model_pretrained_modelpath', type=str, default="pertrained/model_399.pt")
+parser.add_argument('--batchSize', type=int, default=10, help='input batch size for training')
 
+args = parser.parse_args()
 
 def main(args):
     
@@ -54,15 +53,15 @@ def main(args):
     else:
         model = models.Convolutional_blend().to(device)
     
-    pretrained_path = "pertrained/0530maskDone1CurriculLearning_bn_model_199.pt"
+    #gt_pretrained_path = "pertrained/0530maskDone1CurriculLearning_bn_model_199.pt"
     GT_model = pretrain_models.Convolutional_AE().to(device)
-    GT_model.load_state_dict(torch.load(pretrained_path))
+    #GT_model.load_state_dict(torch.load(gt_pretrained_path))
     GT_model.eval()
 
 
     #pretrained_modelpath = "/root/Motion_Style_Infilling/experiment/controllableFirst0609/model/model_300.pt"
-    pretrained_modelpath ="pertrained/model_399.pt"
-    model.load_state_dict(torch.load(pretrained_modelpath))
+    model_pretrained_modelpath ="pertrained/model_399.pt"
+    model.load_state_dict(torch.load(model_pretrained_modelpath))
     model.eval()
 
     NetD = models.Discriminator().to(device)
@@ -98,11 +97,7 @@ def main(args):
             if iter%100 == 0:
                 gt_blended_image= GT_model(blend_input)
                 pred_affine, pred_recon = model(masked_input, blend_gt)
-                saveUtils.save_result(pred_affine, gt_image, blend_gt, gt_blended_image, blend_input, masked_input, iter)
-                for alpha in [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]:
-                    output = model.test2(masked_input, gt_image, blend_gt, alpha)
-                    saveUtils.save_result_test(output, iter, alpha)
-            
+                saveUtils.save_result(pred_affine, gt_image, blend_gt, gt_blended_image, blend_input, masked_input, iter) 
         
 if __name__ == "__main__":
     main(args)
