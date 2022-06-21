@@ -6,6 +6,7 @@ The [Baseline](https://arxiv.org/abs/2010.11531) can generate only one determine
 But, there are many possible cases between keyframes
 Therefore, this project conducted for making its output various with conditional input
 
+Additional: Baseline [pytorch-implementation](https://github.com/rlgnswk/Motion-Infilling-pytorch-version-implementation) 
 
 -----------------
 
