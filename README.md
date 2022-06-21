@@ -1,7 +1,9 @@
-#Content controllable motion infilling 
-##GCT525 Motion Graphics Term project
+# Content controllable motion infilling 
+
+Motion infilling into target content
 
 -----------------
+
 ## Overall Structure:
 <p float="center">
   <img src="./figs/model_overview.png" width="700" />
@@ -35,12 +37,12 @@
 ## Run on the code:
 
 ```
-python train.py --name <name_of_experiment> --datasetPath <your_train_data_path> --ValdatasetPath <your_valid/test_data_path> 
+python train_blending_GAN_controallable.py --name <name_of_experiment> --datasetPath <your_train_data_path> --ValdatasetPath <your_valid/test_data_path> 
 ```
 
 The results will save in ```<Code_path>/experiments(default)/```
 
-You can check the default setting and use it from line 25 to 34 ```<Code_path>/train.py```
+You can check the default setting and use it from line 29 to 37 ```<Code_path>/train_blending_GAN_controallable.py```
 
 # Reference
 Reference [Paper](https://arxiv.org/abs/2010.11531)(3DV 2020)
