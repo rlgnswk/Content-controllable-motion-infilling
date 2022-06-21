@@ -1,6 +1,11 @@
 # Content controllable motion infilling 
 
-Motion infilling into target content
+Motion infilling into target content:
+
+The [Baseline](https://arxiv.org/abs/2010.11531) can generate only one determined output from one input
+But, there are many possible cases between keyframes
+Therefore, this project conducted for making its output various with conditional input
+
 
 -----------------
 
@@ -32,7 +37,7 @@ Motion infilling into target content
 ## Data
 
 1. Get data from [Here](https://theorangeduck.com/page/deep-learning-framework-character-motion-synthesis-and-editing)
-2. Prepocessing by using code from official [Github](https://github.com/eth-ait/motion-infilling/tree/be814cfe971ec58d0e66c7644db3cdc89f71d092)
+2. Prepocessing by using code from [Here](https://github.com/eth-ait/motion-infilling/tree/be814cfe971ec58d0e66c7644db3cdc89f71d092)
 
 
 ## Run on the code:
