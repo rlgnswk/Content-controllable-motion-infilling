@@ -47,6 +47,7 @@ The results will save in ```<Code_path>/experiments(default)/```
 
 You can check the default setting and use it from line 29 to 37 ```<Code_path>/train_blending_GAN_controallable.py```
 
+
 ### Test
 
 The pretrained model is provided at "<Code_path>/pretrained/"
@@ -54,6 +55,7 @@ The pretrained model is provided at "<Code_path>/pretrained/"
 ```
 python test.py --name <name_of_experiment> --ValdatasetPath <your_valid/test_data_path> --model_pretrained_modelpath <trained_model_path>
 ```
+The results will save in ```<Code_path>/experiments(default)/```
 
 # Reference
 Reference [Paper](https://arxiv.org/abs/2010.11531)(3DV 2020)
