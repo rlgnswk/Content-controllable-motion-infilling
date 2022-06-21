@@ -117,7 +117,8 @@ class MotionLoader(Dataset):
                 
                 blend_index = ((index + index + masking_length) // 2) - (blended_len // 2)
                 #blend_zeros[: , blend_index : blend_index + blended_len] = blend_image[: , blend_cut_index : blend_cut_index + blended_len]
-                blend_zeros[: , blend_index : blend_index + blended_len] = blend_image[: , blend_index : blend_index + blended_len] 
+                #blend_zeros[: , blend_index : blend_index + blended_len] = blend_image[: , blend_index : blend_index + blended_len] 
+                blend_zeros[: , (blend_index + blend_index + blended_len)//2] = blend_image[: , (blend_index + blend_index + blended_len)//2] 
             else:
 
                 #In test phase, center of the data are masked

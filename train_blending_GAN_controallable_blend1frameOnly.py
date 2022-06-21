@@ -18,7 +18,7 @@ from torch.autograd import Variable
 
 import models as pretrain_models
 import models_blend_controllable as models
-import models_unpair as Discriminator_model
+
 import utils4blend as utils
 import data_load_blend_1frame as data_load
 #input sample of size 69 × 240
@@ -59,7 +59,7 @@ def main(args):
     GT_model.load_state_dict(torch.load(pretrained_path))
     GT_model.eval()
 
-    NetD = Discriminator_model.Discriminator().to(device)
+    NetD = models.Discriminator().to(device)
 
     saveUtils.save_log(str(args))
     saveUtils.save_log(str(summary(model, ((1,1,69,240), (1,1,69,240)))))

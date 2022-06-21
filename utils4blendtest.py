@@ -126,4 +126,4 @@ class saveData():
     
     def save_result_test(self, output, iter, alpha):
         output = output.detach().squeeze(1).permute(0,2,1).cpu().numpy()
-        np.save(self.save_dir_validation + '/epoch_' + str(iter)+"_alpha_"+str(alpha) + "_output", output)
+        np.save(self.save_dir_validation + '/epoch_' + str(iter)+"_alpha_"+str(alpha) + "_TestOutput", output)

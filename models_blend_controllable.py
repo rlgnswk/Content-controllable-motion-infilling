@@ -159,8 +159,12 @@ class Style_Encoder(nn.Module):
             x = self.Conv_block4(x)
             x = self.Conv_block5(x) # 256 x 3 × 8 
             x = x.view(x.size(0), -1)
-            mean = self.Fc_mean(x)
-            std = self.Fc_std(x)
+            #mean = self.Fc_mean(x)
+            #std = self.Fc_std(x)
+
+            mean = torch.tanh(self.Fc_mean(x))
+            std = torch.tanh(self.Fc_std(x))
+
             return mean, std
 
 def calc_mean_std(feat, eps=1e-5):
@@ -249,14 +253,13 @@ class Convolutional_blend(nn.Module):
 
         return out_test
 
-    def test3(self, masked_input, mask_gt, blend_gt, alpha, blend_mean, blend_std):
+    def test_rand_mu_var(self, masked_input, batch_size = 80):
         # fixed mean and std for checking separation recon and content space 
 
         mask_feat = self.Content_Encoder_module(masked_input) # 
-        
+        blend_mean = torch.rand(batch_size, 256) * 2 - 1 
+        blend_std = torch.rand(batch_size, 256) * 2 - 1
         AdaIN_latent_blend = AdaIN(mask_feat, blend_mean, blend_std)
-
-        #target_latent =  (1-alpha) * AdaIN_latent_gt + alpha * AdaIN_latent_blend
 
         out_test = self.Decoder_module(AdaIN_latent_blend)  
 
