@@ -2,11 +2,27 @@
 ##GCT525 Motion Graphics Term project
 
 -----------------
+## Overall Structure:
+<p float="center">
+  <img src="./figs/model_overview.png" width="700" />
+
+</p>
+
 
 ## Result:
+<p float="center">
+  <img src="./figs/sitdown.gif" width="500" />
+  <img src="./figs/strechArm.gif" width="500" />
+   
+</p>
 
 
-
+## Result(latent interpolation):
+<p float="center">
+  <img src="./figs/crouch_standing.gif" width="500" />
+  <img src="./figs/arm_walking.gif" width="500" />
+   
+</p>
 ----------
 # Usage:
 
