@@ -25,8 +25,8 @@ Motion infilling into target content
   <img src="./figs/arm_walking.gif" width="500" />
    
 </p>
-----------
 
+----------
 # Usage:
 
 ## Data
