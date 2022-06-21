@@ -105,11 +105,7 @@ if __name__ == '__main__':
 
     data_path = "C:/Users/VML/Documents/GitHub/Motion_Style_Infilling/experiment/"+args.name +"/validation/"
     epoch = args.epoch
-    # style 
-    '''db_GT = 'epoch_'+str(epoch)+'motion_a.npy'
-    db_Results = 'epoch_'+str(epoch)+'motion_b.npy'
-    db_Input = 'epoch_'+str(epoch)+'out_style_B_Content_A.npy'
-    '''
+
     #infilling
     #db_GT = 'epoch_'+str(epoch)+'_GT.npy'
     #db_Results = 'epoch_'+str(epoch)+'_Masked_Input.npy'
@@ -120,6 +116,7 @@ if __name__ == '__main__':
     db_Input = 'epoch_'+str(epoch)+'_Masked_input.npy'
     db_Results = 'epoch_'+str(epoch)+'_pred.npy'
     db_GT2 = 'epoch_'+str(epoch)+'_gt_blend.npy'
+    
     database_GT= np.load(os.path.join(data_path, db_GT))
     #print(database.shape)
     database_GT = add_foot_contacts(database_GT)
