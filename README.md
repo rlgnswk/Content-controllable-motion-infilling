@@ -1,6 +1,10 @@
 # Content controllable motion infilling 
 
-Motion infilling into target content
+Motion infilling into target content:
+
+The [Baseline](https://arxiv.org/abs/2010.11531)(Convolutional Autoencoders for Human Motion Infilling, 3DV 2020) can generate only one determined output from one input. But, there are many possible cases between keyframes. Therefore, this project conducted for making its output various with conditional input.
+
+Additional: Baseline [Implementation(pytorch version)](https://github.com/rlgnswk/Motion-Infilling-pytorch-version-implementation) 
 
 -----------------
 
@@ -31,8 +35,8 @@ Motion infilling into target content
 
 ## Data
 
-1. Get data from [Here](https://theorangeduck.com/page/deep-learning-framework-character-motion-synthesis-and-editing)
-2. Prepocessing by using code from official [Github](https://github.com/eth-ait/motion-infilling/tree/be814cfe971ec58d0e66c7644db3cdc89f71d092)
+1. Get data from [Holden et al](https://theorangeduck.com/page/deep-learning-framework-character-motion-synthesis-and-editing)
+2. Pre-pocessing by using code from official [Kaufmann et al](https://github.com/eth-ait/motion-infilling/tree/be814cfe971ec58d0e66c7644db3cdc89f71d092)
 
 
 ## Run on the code:
@@ -69,5 +73,5 @@ cd <Code_path>/VisualizationCode ; python view.py --name <name_of_experiment> --
 # Reference
 Reference [Paper](https://arxiv.org/abs/2010.11531)(3DV 2020)
 
-Official [Github](https://github.com/eth-ait/motion-infilling/tree/be814cfe971ec58d0e66c7644db3cdc89f71d092) (Tensorflow)
+Official [Github](https://github.com/eth-ait/motion-infilling/tree/be814cfe971ec58d0e66c7644db3cdc89f71d092) (Tensorflow) of reference paper
 
