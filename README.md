@@ -57,6 +57,15 @@ python test.py --name <name_of_experiment> --ValdatasetPath <your_valid/test_dat
 ```
 The results will save in ```<Code_path>/experiments(default)/```
 
+### Visualization
+
+The visualization codes are referd from [Here](https://github.com/eth-ait/motion-infilling/tree/be814cfe971ec58d0e66c7644db3cdc89f71d092)
+
+```
+cd <Code_path>/VisualizationCode ; python view.py --name <name_of_experiment> --epoch <num of epoch(train)/iter(test>
+```
+
+
 # Reference
 Reference [Paper](https://arxiv.org/abs/2010.11531)(3DV 2020)
 
