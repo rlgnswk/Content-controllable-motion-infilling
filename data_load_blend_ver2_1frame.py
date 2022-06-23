@@ -84,7 +84,7 @@ class MotionLoader(Dataset):
             orig_height = gt_image.shape[0] #69
             orig_width = gt_image.shape[1] #240
             
-            masking_length = round(np.random.normal(self.masking_length_mean, 20.0)) # std 20
+            masking_length = self.masking_length_mean # std 20
             if masking_length <= 4 : 
                 masking_length = 4
             if masking_length >= 240 :
@@ -96,7 +96,7 @@ class MotionLoader(Dataset):
 
             ###make input for blending
             data_select = random.randint(0, len(self.data)-1)
-            blended_len = masking_length // 4 
+            blended_len = masking_length // 4  ## 30
             blend_image = self.remove_foot_contacts(self.data[data_select])
             blend_image = np.transpose(blend_image)
             blend_zeros = np.zeros((orig_height, orig_width))
@@ -117,9 +117,8 @@ class MotionLoader(Dataset):
                 
                 blend_index = ((index + index + masking_length) // 2) - (blended_len // 2)
                 #blend_zeros[: , blend_index : blend_index + blended_len] = blend_image[: , blend_cut_index : blend_cut_index + blended_len]
-                #blend_zeros[: , blend_index : blend_index + blended_len] = blend_image[: , blend_index : blend_index + blended_len] 
-                blend_zeros[: , (blend_index + blend_index + blended_len)//2] = blend_image[: , (blend_index + blend_index + blended_len)//2] 
-            
+                blend_zeros[: , (blend_index + blend_index + blended_len)//2] = blend_image[: , (blend_index + blend_index + blended_len)//2]
+                blend_part = blend_image[: , (blend_index + blend_index + blended_len)//2]
             else:
 
                 #In test phase, center of the data are masked
@@ -128,15 +127,14 @@ class MotionLoader(Dataset):
                 index = 120 - mask_width // 2
                 masked_input[: , index : index+mask_width] = masking # masking
                 
-                
                 blend_index = ((index + index + masking_length) // 2) - (blended_len // 2)
-                #take one frame
                 blend_zeros[: , (blend_index + blend_index + blended_len)//2] = blend_image[: , (blend_index + blend_index + blended_len)//2]
+                blend_part = blend_image[: , (blend_index + blend_index + blended_len)//2]
                 #blend_zeros[: , blend_index : blend_index + blended_len] = blend_image[: , blend_cut_index : blend_cut_index + blended_len] 
             
             #print(np.sum(masked_input) == np.sum(gt_image))
             #return maksed_input and gt CHW #(69, 240) --> (1, 69, 240)
-            return np.expand_dims(masked_input, axis=0), np.expand_dims(gt_image, axis=0), np.expand_dims(blend_zeros, axis=0), np.expand_dims(blend_image, axis=0) # it will (batch, 1, 69, 240)
+            return np.expand_dims(masked_input, axis=0), np.expand_dims(gt_image, axis=0), np.expand_dims(blend_zeros, axis=0), np.expand_dims(blend_image, axis=0), np.expand_dims(np.expand_dims(blend_part, axis=0), axis=-1) # it will (batch, 1, 69, 240)
         
         def __len__(self):
             return len(self.data)
