@@ -114,23 +114,25 @@ if __name__ == '__main__':
     #blend
     db_GT = 'epoch_'+str(epoch)+'_gt_image.npy'
     #db_Input = 'epoch_'+str(epoch)+'_Masked_input.npy'
-    db_Input = 'epoch_'+str(epoch)+'_blend_input.npy'
+    db_Input = 'epoch_'+str(epoch)+'_Masked_input.npy'
+    db_Results_rand = 'epoch_'+str(epoch)+'_alpha_0_TestOutput.npy'
     db_Results = 'epoch_'+str(epoch)+'_pred.npy'
-    db_GT2 = 'epoch_'+str(epoch)+'_gt_blend.npy'
     
     database_GT= np.load(os.path.join(data_path, db_GT))
     #print(database.shape)
     database_GT = add_foot_contacts(database_GT)
 
-    database_GT2= np.load(os.path.join(data_path, db_GT2))
-    #print(database.shape)
-    database_GT2 = add_foot_contacts(database_GT2)
+
 
     
+    database_Results_rand= np.load(os.path.join(data_path, db_Results_rand))
+    #print(database.shape)
+    database_Results_rand = add_foot_contacts(database_Results_rand)
+
     database_Results= np.load(os.path.join(data_path, db_Results))
     #print(database.shape)
     database_Results = add_foot_contacts(database_Results)
-    
+  
     database_Input= np.load(os.path.join(data_path, db_Input))
     #print(database.shape)
     database_Input = add_foot_contacts(database_Input)
@@ -145,7 +147,7 @@ if __name__ == '__main__':
             database_Input[index0:index0 + 1],
             
             database_Results[index0:index0 + 1],
-            database_GT2[index0:index0 + 1]
+            database_Results_rand[index0:index0 + 1]
         ])
         
         

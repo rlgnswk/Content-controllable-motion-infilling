@@ -259,7 +259,7 @@ class Convolutional_blend(nn.Module):
         mask_feat = self.Content_Encoder_module(masked_input) # 
         blend_mean = torch.rand(batch_size, 256) * 2 - 1 
         blend_std = torch.rand(batch_size, 256) * 2 - 1
-        AdaIN_latent_blend = AdaIN(mask_feat, blend_mean, blend_std)
+        AdaIN_latent_blend = AdaIN(mask_feat, blend_mean.cuda(), blend_std.cuda())
 
         out_test = self.Decoder_module(AdaIN_latent_blend)  
 
