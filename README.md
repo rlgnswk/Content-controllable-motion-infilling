@@ -56,7 +56,7 @@ You can check the default setting and use it from line 29 to 37 ```<Code_path>/t
 
 The pretrained model is provided at "<Code_path>/pretrained/"
 
-We provide pretrained model "model_399.pt" in ./pretrained folder, check it if you want.
+We provide pretrained model "model_399.pt" at "./pretrained" folder, check it if you want.
 
 ```
 python test.py --name <name_of_experiment> --ValdatasetPath <your_valid/test_data_path> --model_pretrained_modelpath <trained_model_path>
