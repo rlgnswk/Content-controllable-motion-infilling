@@ -103,7 +103,7 @@ args = parser.parse_args()
 
 if __name__ == '__main__':
 
-    data_path = "C:/Users/VML/Documents/GitHub/Motion_Style_Infilling/experiment/"+args.name +"/validation/"
+    data_path = "./experiment/"+args.name +"/validation/"
     epoch = args.epoch
 
     #infilling
