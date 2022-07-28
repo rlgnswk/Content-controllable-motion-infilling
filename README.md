@@ -4,7 +4,6 @@ Motion infilling into target content:
 
 The [Baseline](https://arxiv.org/abs/2010.11531)(Convolutional Autoencoders for Human Motion Infilling, 3DV 2020) can generate only one determined output from one input. But, there are many possible cases between keyframes. Therefore, this project conducted for making its output various with conditional input.
 
-Additional: Baseline Implementation[(Here, Pytorch)](https://github.com/rlgnswk/Motion-Infilling-pytorch-version-implementation) 
 
 -----------------
 
